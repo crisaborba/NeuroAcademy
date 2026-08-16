@@ -1,0 +1,381 @@
+{#
+  Renderizador de blocos de aula (Fase 1 -- fundação / Fase 2 -- visual).
+  Ref.: Seção 10.2 (catálogo) e Seção 11 (validação) da spec técnica.
+
+  Fase 2 (Experiência de Aprendizagem): cada tipo de bloco ganhou uma
+  aparência própria (cor de destaque, ícone, tratamento tipográfico) para
+  que a aula pareça uma sequência de unidades distintas -- texto, imagem,
+  exemplo, mundo real, flip card, microdesafio, resumo -- em vez de um
+  fluxo único e contínuo. Todas seguem a mesma linguagem visual (cartão
+  `.block-card`, eyebrow `.block-eyebrow`, espaçamento `.lesson-block`) para
+  não parecerem um Frankenstein de estilos.
+
+  Nenhuma regra de negócio mudou aqui: um bloco marcado valid=False continua
+  sendo pulado com um aviso visível (nunca derruba a aula inteira -- Seção
+  11), tipos ainda sem componente visual (comparison/timeline/
+  interactive_diagram) continuam com o aviso "chega em fase futura", e o
+  bloco 'microchallenge' continua só referenciando uma pergunta que já
+  existe em lesson_question (toda a lógica de correção é inalterada).
+#}
+{% import "partials/icons.html" as ic %}
+
+{% macro render_block(block, questions_by_id, answers, gam) %}
+  {% set type = block.type %}
+  {% set p = block.payload %}
+
+  {% if not block.valid %}
+    <div class="lesson-block block-card accent-red block-invalid">
+      <span class="text-muted" style="font-size:12px;color:#FF6B6B;display:flex;align-items:center;gap:7px;">
+        {{ ic.icon('x', 13, '#FF6B6B') }}
+        Este bloco (tipo "{{ type }}") não pôde ser exibido: conteúdo inválido.
+      </span>
+    </div>
+
+  {% elif type == 'heading' %}
+    <div class="lesson-block block-heading">
+      {% if p.level == 3 %}
+      <h3>{{ p.text }}</h3>
+      {% else %}
+      <h2>{{ p.text }}</h2>
+      {% endif %}
+    </div>
+
+  {% elif type == 'text' %}
+    <div class="lesson-block block-text lesson-text-body">
+      {{ p.markdown|lesson_markdown }}
+    </div>
+
+  {% elif type == 'learning_objective' %}
+    <div class="lesson-block block-card accent-blue block-objective">
+      <div class="block-eyebrow" style="color:var(--primary);">{{ ic.icon('target', 13, 'var(--primary)') }} OBJETIVO DE APRENDIZAGEM</div>
+      <ul>
+        {% for item in p['items'] %}<li>{{ item }}</li>{% endfor %}
+      </ul>
+    </div>
+
+  {% elif type == 'image' %}
+    <div class="lesson-block block-image">
+      <figure>
+        <img src="{{ p.url }}" alt="{{ p.alt }}" loading="lazy" class="{{ 'is-zoomable' if p.zoomable }}" />
+        {% if p.caption %}<figcaption>{{ p.caption }}</figcaption>{% endif %}
+      </figure>
+    </div>
+
+  {% elif type == 'example' %}
+    <div class="lesson-block block-card accent-cyan">
+      <div class="block-eyebrow" style="color:var(--primary);">{{ ic.icon('sparkles', 13, 'var(--primary)') }} {{ p.title or 'EXEMPLO' }}</div>
+      <div class="lesson-text-body block-text" style="font-size:15.5px;">{{ p.content|lesson_markdown }}</div>
+    </div>
+
+  {% elif type == 'real_world_scenario' %}
+    <div class="lesson-block block-card accent-purple block-realworld">
+      <div class="block-eyebrow" style="color:var(--accent);">{{ ic.icon('globe', 13, 'var(--accent)') }} {{ p.title or 'NO MUNDO REAL' }}</div>
+      <p>{{ p.scenario }}</p>
+      {% if p.question %}<p class="rw-question">{{ p.question }}</p>{% endif %}
+    </div>
+
+  {% elif type == 'flip_card' %}
+    <div class="lesson-block flip-card-wrap flip-card" data-flipped="0">
+      <button type="button" class="flip-card-btn" aria-pressed="false" aria-label="Cartão de revisão. Clique ou pressione Enter para virar e ver a resposta.">
+        <div class="flip-card-inner">
+          <div class="flip-card-face face-front">
+            <div class="block-eyebrow">{{ ic.icon('layers', 13) }} CLIQUE PARA VIRAR</div>
+            <p class="flip-card-front-text">{{ p.front }}</p>
+            {% if p.hint %}<p class="flip-card-hint">{{ ic.icon('eye', 12) }} {{ p.hint }}</p>{% endif %}
+          </div>
+          <div class="flip-card-face face-back">
+            <div class="block-eyebrow" style="color:var(--accent);">{{ ic.icon('layers', 13, 'var(--accent)') }} RESPOSTA</div>
+            <p>{{ p.back }}</p>
+          </div>
+        </div>
+      </button>
+    </div>
+
+  {% elif type == 'microchallenge' %}
+    {% set q = questions_by_id.get(p.question_id) %}
+    {% if q %}
+      {% set prev_answer = answers.get(q.id) %}
+      <div class="lesson-block lesson-question" data-question="{{ q.id }}" data-kind="{{ q.kind }}" data-answered="{{ '1' if (prev_answer and prev_answer.is_correct) else '0' }}">
+        <span class="badge" style="background:{{ '#4D7EFF22' if q.kind=='verification' else '#9B59FF22' }};color:{{ '#4D7EFF' if q.kind=='verification' else '#9B59FF' }};margin-bottom:14px;display:inline-block;">
+          {{ 'VERIFICAÇÃO' if q.kind == 'verification' else ('ATIVIDADE' if q.kind == 'activity' else 'MICRODESAFIO') }}
+        </span>
+        <p style="font-weight:600;margin-bottom:16px;font-size:15.5px;">{{ q.prompt }}</p>
+        <div class="flex-col gap-8 question-options">
+          {% for opt in q.options %}
+          {% set is_prev_choice = prev_answer and prev_answer.option_id == opt.id %}
+          <button type="button"
+                  class="btn btn-outline question-option"
+                  style="justify-content:flex-start;text-align:left;{% if is_prev_choice %}border-color:{{ '#22c55e' if prev_answer.is_correct else '#FF6B6B' }};color:{{ '#22c55e' if prev_answer.is_correct else '#FF6B6B' }};{% endif %}"
+                  data-option="{{ opt.id }}"
+                  {{ 'disabled' if (prev_answer and prev_answer.is_correct) }}>
+            {{ opt.label }}
+          </button>
+          {% endfor %}
+        </div>
+        <div class="question-feedback {{ 'fb-correct' if (prev_answer and prev_answer.is_correct) else ('fb-wrong' if prev_answer else '') }}" style="{{ '' if prev_answer else 'display:none;' }}">
+          {% if prev_answer %}{{ ic.icon('check',14) if prev_answer.is_correct else ic.icon('x',14) }} <span>{{ 'Correto.' if prev_answer.is_correct else 'Não é bem isso. Tente novamente.' }}</span>{% endif %}
+        </div>
+      </div>
+    {% else %}
+      <div class="lesson-block block-card accent-red">
+        <span class="text-muted" style="font-size:12px;color:#FF6B6B;display:flex;align-items:center;gap:7px;">
+          {{ ic.icon('x', 13, '#FF6B6B') }} Microdesafio referencia uma pergunta que não existe (question_id={{ p.question_id }}).
+        </span>
+      </div>
+    {% endif %}
+
+  {% elif type == 'reflection' %}
+    <div class="lesson-block block-card accent-purple-soft block-reflection">
+      <div class="block-eyebrow" style="color:var(--accent);">{{ ic.icon('edit', 13, 'var(--accent)') }} REFLEXÃO</div>
+      <p>{{ p.prompt }}</p>
+    </div>
+
+  {% elif type == 'summary' %}
+    <div class="lesson-block block-card accent-green block-summary">
+      <div class="block-eyebrow" style="color:var(--green);">{{ ic.icon('check', 13, 'var(--green)') }} RESUMO</div>
+      <ul>
+        {% for item in p['items'] %}<li>{{ item }}</li>{% endfor %}
+      </ul>
+    </div>
+
+  {% elif type == 'progress_header' %}
+    <div class="lesson-block pg-header" data-xp-target="{{ p.reward_xp }}">
+      <div class="pg-header-top">
+        <span class="pg-mission">{{ ic.icon('flag', 13, 'var(--primary)') }} {{ p.mission }}</span>
+        <span class="pg-reward">+{{ p.reward_xp }} XP{% if p.reward_extra %} · {{ p.reward_extra }}{% endif %} {{ ic.icon('zap', 13, 'var(--yellow)') }}</span>
+      </div>
+      <div class="pg-track"><div class="pg-fill" data-pct="{{ p.progress_pct }}" style="width:0%;"></div></div>
+      <span class="pg-pct" data-pct-label>{{ p.progress_pct }}%</span>
+    </div>
+
+  {% elif type == 'story_choice' %}
+    {% set q = questions_by_id.get(p.question_id) %}
+    {% if q %}
+      {% set prev_answer = answers.get(q.id) %}
+      <div class="lesson-block block-card accent-blue story-choice lesson-question" data-question="{{ q.id }}" data-kind="{{ q.kind }}" data-answered="{{ '1' if (prev_answer and prev_answer.is_correct) else '0' }}">
+        <div class="block-eyebrow">{{ ic.icon('message', 13) }} DESAFIO PRÁTICO</div>
+        {% for line in p.scenario_lines %}<p class="sc-line">{{ line }}</p>{% endfor %}
+        <blockquote class="sc-quote">{{ p.quote }}</blockquote>
+        <p class="sc-question">{{ p.question }}</p>
+        <div class="flex-col gap-8 question-options sc-options">
+          {% for opt in q.options %}
+          {% set is_prev_choice = prev_answer and prev_answer.option_id == opt.id %}
+          <button type="button"
+                  class="btn btn-outline question-option sc-option"
+                  style="justify-content:flex-start;text-align:left;{% if is_prev_choice %}border-color:{{ '#22c55e' if prev_answer.is_correct else '#FF6B6B' }};color:{{ '#22c55e' if prev_answer.is_correct else '#FF6B6B' }};{% endif %}"
+                  data-option="{{ opt.id }}"
+                  {{ 'disabled' if (prev_answer and prev_answer.is_correct) }}>
+            <span class="sc-letter">{{ ['A','B','C','D','E'][loop.index0] }}</span> {{ opt.label }}
+          </button>
+          {% endfor %}
+        </div>
+        <div class="question-feedback sc-feedback {{ 'fb-correct' if (prev_answer and prev_answer.is_correct) else ('fb-wrong' if prev_answer else '') }}" style="{{ '' if prev_answer else 'display:none;' }}">
+          {% if prev_answer %}{{ ic.icon('check',14) if prev_answer.is_correct else ic.icon('x',14) }} <span>{{ 'Correto.' if prev_answer.is_correct else 'Não é bem isso. Tente novamente.' }}</span>{% endif %}
+        </div>
+      </div>
+    {% else %}
+      <div class="lesson-block block-card accent-red">
+        <span class="text-muted" style="font-size:12px;color:#FF6B6B;display:flex;align-items:center;gap:7px;">
+          {{ ic.icon('x', 13, '#FF6B6B') }} Desafio referencia uma pergunta que não existe (question_id={{ p.question_id }}).
+        </span>
+      </div>
+    {% endif %}
+
+  {% elif type == 'before_after_slider' %}
+    <div class="lesson-block block-card ba-slider-wrap">
+      <div class="block-eyebrow" style="color:var(--cyan);">{{ ic.icon('sparkles', 13, 'var(--cyan)') }} MOMENTO WOW</div>
+      <p class="ba-instruction">{{ p.instruction }}</p>
+      <div class="ba-slider" data-ba-slider>
+        <div class="ba-after">
+          <span class="ba-tag ba-tag-after">{{ p.after.label }}</span>
+          <p class="ba-text">{{ p.after.text }}</p>
+          <span class="ba-meta ba-meta-after">{{ ic.icon('check', 12) }} {{ p.after.meta }}</span>
+        </div>
+        <div class="ba-before" data-ba-before>
+          <span class="ba-tag ba-tag-before">{{ p.before.label }}</span>
+          <p class="ba-text">{{ p.before.text }}</p>
+          <span class="ba-meta ba-meta-before">{{ ic.icon('clock', 12) }} {{ p.before.meta }}</span>
+        </div>
+        <div class="ba-handle" data-ba-handle role="slider" tabindex="0" aria-label="Arraste para comparar antes e depois" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+          <div class="ba-handle-grip">{{ ic.icon('chevron-left', 13) }}{{ ic.icon('chevron-right', 13) }}</div>
+        </div>
+      </div>
+    </div>
+
+  {% elif type == 'concept_reveal' %}
+    <div class="lesson-block block-card accent-purple-soft concept-reveal">
+      <div class="cr-anim" aria-hidden="true">
+        <div class="cr-dot cr-dot-1"></div><div class="cr-dot cr-dot-2"></div><div class="cr-dot cr-dot-3"></div>
+        <div class="cr-filter"></div>
+        <div class="cr-out"></div>
+      </div>
+      {% for line in p.lines %}<p class="cr-line">{{ line }}</p>{% endfor %}
+    </div>
+
+  {% elif type == 'prompt_builder' %}
+    <div class="lesson-block block-card accent-blue prompt-builder" data-pb-correct="0">
+      <div class="block-eyebrow">{{ ic.icon('bot', 13) }} SIMULADOR DE IA</div>
+      <p class="pb-instruction">{{ p.instruction }}</p>
+      <div class="pb-groups">
+        {% for group in p.groups %}
+        <div class="pb-group" data-pb-group="{{ loop.index0 }}">
+          <span class="pb-group-label">{{ group.label }}</span>
+          <div class="pb-options">
+            {% for option in group.options %}
+            <button type="button" class="pb-option {{ 'is-correct-choice' if loop.index0 == 0 }}" data-pb-value="{{ loop.index0 }}">{{ option }}</button>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="pb-prompt-preview" data-pb-preview>
+        <span class="pb-cursor-label text-muted">Seu comando aparecerá aqui...</span>
+      </div>
+      <div class="pb-response" data-pb-response style="display:none;">
+        <div class="pb-response-head">{{ ic.icon('sparkles', 13, 'var(--accent)') }} Resposta da IA</div>
+        <p class="pb-response-text" data-pb-response-text data-full-text="{{ p.simulated_response }}"><span class="pb-typing-cursor">▍</span></p>
+      </div>
+    </div>
+
+  {% elif type == 'hotspot_discovery' %}
+    <div class="lesson-block block-card hotspot-discovery">
+      <div class="block-eyebrow">{{ ic.icon('eye', 13) }} EXPLORE NO CLIQUE</div>
+      <p class="hs-instruction">{{ p.instruction }}</p>
+      <div class="hs-board">
+        {% for h in p.hotspots %}
+        <button type="button" class="hs-point" style="left:{{ h.x }}%;top:{{ h.y }}%;" data-hs-point aria-label="{{ h.label }}">
+          <span class="hs-pulse"></span>
+          <span class="hs-tooltip"><strong>{{ h.label }}</strong><br>{{ h.description }}</span>
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+
+  {% elif type == 'tip_vs_error' %}
+    <div class="lesson-block tip-error">
+      <button type="button" class="te-item te-error" data-te-toggle aria-expanded="false">
+        <span class="te-head">🔴 <strong>{{ p.error_title }}</strong> {{ ic.icon('chevron-down', 14) }}</span>
+        <span class="te-body">{{ p.error_text }}</span>
+      </button>
+      <button type="button" class="te-item te-tip" data-te-toggle aria-expanded="false">
+        <span class="te-head">🟢 <strong>{{ p.tip_title }}</strong> {{ ic.icon('chevron-down', 14) }}</span>
+        <span class="te-body">{{ p.tip_text }}</span>
+      </button>
+    </div>
+
+  {% elif type == 'speed_challenge' %}
+    <div class="lesson-block block-card accent-cyan speed-challenge" data-sc-started="0">
+      <div class="block-eyebrow" style="color:var(--cyan);">{{ ic.icon('sparkles', 13, 'var(--cyan)') }} MOMENTO WOW</div>
+      <p class="spc-instruction">{{ p.instruction }}</p>
+      <button type="button" class="btn btn-primary spc-btn" data-spc-start>{{ ic.icon('clock', 14) }} {{ p.button_label }}</button>
+      <div class="spc-timer" data-spc-timer style="display:none;">5</div>
+      <div class="spc-result" data-spc-result style="display:none;">
+        <p class="spc-result-intro">{{ p.result_intro }}</p>
+        <ul>{% for item in p.result_items %}<li>{{ item }}</li>{% endfor %}</ul>
+      </div>
+    </div>
+
+  {% elif type == 'drag_drop_quiz' %}
+    {% set q = questions_by_id.get(p.question_id) %}
+    {% if q %}
+      {% set prev_answer = answers.get(q.id) %}
+      {% set prev_option = (q.options | selectattr('id', 'equalto', prev_answer.option_id) | first) if prev_answer else None %}
+      <div class="lesson-block block-card dnd-quiz lesson-question" data-question="{{ q.id }}" data-kind="{{ q.kind }}" data-answered="{{ '1' if (prev_answer and prev_answer.is_correct) else '0' }}">
+        <div class="block-eyebrow">{{ ic.icon('target', 13) }} QUIZ RÁPIDO</div>
+        <p class="dnd-sentence">
+          {{ p.sentence_before }}
+          <span class="dnd-blank {{ 'is-filled' if prev_answer else '' }} {{ 'is-correct' if (prev_answer and prev_answer.is_correct) else ('is-wrong' if prev_answer else '') }}" data-dnd-blank>{{ prev_option.label if prev_option else '_________' }}</span>
+          {{ p.sentence_after }}
+        </p>
+        <div class="dnd-options question-options">
+          {% for opt in q.options %}
+          <button type="button"
+                  class="dnd-option question-option"
+                  draggable="true"
+                  data-option="{{ opt.id }}"
+                  data-dnd-label="{{ opt.label }}"
+                  {{ 'disabled is-used' if (prev_answer and prev_answer.is_correct) }}>
+            {{ opt.label }}
+          </button>
+          {% endfor %}
+        </div>
+        <div class="dnd-feedback question-feedback {{ 'fb-correct' if (prev_answer and prev_answer.is_correct) else ('fb-wrong' if prev_answer else '') }}" style="{{ '' if prev_answer else 'display:none;' }}">
+          {% if prev_answer %}{{ ic.icon('check',14) if prev_answer.is_correct else ic.icon('x',14) }} <span>{{ 'Correto.' if prev_answer.is_correct else 'Não é bem isso. Tente novamente.' }}</span>{% endif %}
+        </div>
+      </div>
+    {% else %}
+      <div class="lesson-block block-card accent-red">
+        <span class="text-muted" style="font-size:12px;color:#FF6B6B;display:flex;align-items:center;gap:7px;">
+          {{ ic.icon('x', 13, '#FF6B6B') }} Quiz referencia uma pergunta que não existe (question_id={{ p.question_id }}).
+        </span>
+      </div>
+    {% endif %}
+
+  {% elif type == 'completion_dashboard' %}
+    <div class="lesson-block completion-dashboard" data-lesson="{{ gam.lesson_id }}" data-course="{{ gam.course_id }}">
+      <div class="cd-badge">{{ ic.icon('trophy', 26, '#0B0E16') }}</div>
+      <h2 class="cd-title">{{ p.title }}</h2>
+      {% if p.subtitle %}<p class="cd-subtitle">{{ p.subtitle }}</p>{% endif %}
+      <ul class="cd-items">
+        {% for item in p['items'] %}<li>{{ ic.icon('check', 14, 'var(--green)') }} {{ item }}</li>{% endfor %}
+      </ul>
+
+      {# XP real já creditado NESTA aula (soma do ledger -- nunca um número
+         fixo no payload/JS). Ref. Seção 8: "NUNCA utilize... qualquer
+         número fixo como representação do progresso real". #}
+      <p class="cd-xp-earned">{{ ic.icon('zap', 14, 'var(--yellow)') }} <strong>{{ gam.lesson_xp }} XP</strong> conquistados nesta aula até agora</p>
+
+      <div class="cd-achievement {{ 'is-unlocked' if gam.achievement_unlocked else 'is-locked' }}">
+        {{ ic.icon('award', 16, 'var(--yellow)' if gam.achievement_unlocked else 'var(--muted)') }}
+        {% if gam.achievement_unlocked %}
+          <span><strong>Conquista Desbloqueada:</strong> {{ p.achievement_title }} (+{{ gam.achievement_xp }} XP)</span>
+        {% else %}
+          <span><strong>{{ p.achievement_title }}</strong> — conclua a missão abaixo para desbloquear (+{{ gam.achievement_xp }} XP)</span>
+        {% endif %}
+      </div>
+
+      <button type="button" id="cdCompleteBtn"
+              class="btn {{ 'btn-primary' if gam.lesson_done else ('btn-primary' if gam.can_complete else 'btn-outline') }} cd-complete-btn"
+              {{ 'disabled' if (not gam.can_complete and not gam.lesson_done) }}>
+        {% if gam.lesson_done %}
+          {{ ic.icon('check', 15) }} Missão Cumprida
+        {% else %}
+          {{ ic.icon('flag', 15) }} Concluir Missão
+        {% endif %}
+      </button>
+      {% if not gam.can_complete and not gam.lesson_done %}
+      <p class="cd-hint text-muted">Responda corretamente o quiz do Bloco 10 para liberar a conclusão.</p>
+      {% endif %}
+    </div>
+
+  {% elif type == 'cta_next' %}
+    <div class="lesson-block cta-next">
+      <p class="cta-text">{{ p.text }}</p>
+      <button type="button" class="btn btn-primary cta-next-btn" id="ctaNextBtn">{{ p.button_label }} {{ ic.icon('arrow-right', 15) }}</button>
+    </div>
+
+  {% elif type in ('comparison', 'timeline', 'interactive_diagram') %}
+    {# Estrutura de dados preparada e validada (Seção 10.2/11), componente
+       visual ainda não implementado nesta fase -- ver relatório da Fase 1,
+       item "itens fora do escopo". Não fabricamos um componente falso só
+       para preencher a lista. #}
+    <div class="lesson-block block-card accent-dashed block-unavailable">
+      <span style="display:flex;align-items:center;gap:7px;">
+        {{ ic.icon('eye', 13) }} Bloco do tipo "{{ type }}" — dado válido, componente visual chega em fase futura.
+      </span>
+    </div>
+
+  {% else %}
+    <div class="lesson-block block-card accent-red">
+      <span class="text-muted" style="font-size:12px;color:#FF6B6B;display:flex;align-items:center;gap:7px;">
+        {{ ic.icon('x', 13, '#FF6B6B') }} Tipo de bloco não reconhecido: "{{ type }}".
+      </span>
+    </div>
+  {% endif %}
+{% endmacro %}
+
+{% macro render_blocks(blocks, questions_by_id, answers, gam) %}
+  {% for block in blocks %}
+    {{ render_block(block, questions_by_id, answers, gam) }}
+  {% endfor %}
+{% endmacro %}

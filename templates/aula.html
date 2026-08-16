@@ -1,0 +1,630 @@
+{% extends "base_app.html" %}
+{% import "partials/blocks.html" as blk %}
+{% block title %}{{ lesson.title }} — {{ course.title }}{% endblock %}
+{% block content %}
+<div class="lesson-shell">
+<div class="lesson-grid" style="display:grid;grid-template-columns:1fr 300px;gap:0;min-height:calc(100vh - 64px);">
+  <div class="lesson-page-pad" style="padding:28px 32px 0;">
+
+    <div class="reading-progress"><div class="reading-progress-fill" id="readingProgressFill"></div></div>
+
+    <div style="padding-top:20px;">
+      <div class="flex items-center justify-between" style="flex-wrap:wrap;gap:12px;">
+        <a href="{{ url_for('main.curso_detalhe', course_id=course.id) }}" class="back-to-course" style="display:inline-flex;align-items:center;gap:6px;color:var(--muted);text-decoration:none;font-size:13px;">{{ ic.icon('chevron-left',14) }} {{ course.title }}</a>
+        <button type="button" class="toc-mobile-toggle btn btn-outline btn-sm" id="tocMobileToggle" aria-expanded="false" aria-controls="lessonToc">{{ ic.icon('list',14) }} Conteúdo do curso</button>
+      </div>
+
+      <nav class="lesson-breadcrumb" aria-label="Você está em">
+        <a href="{{ url_for('main.cursos') }}">Cursos</a>
+        <span class="sep">/</span>
+        <a href="{{ url_for('main.curso_detalhe', course_id=course.id) }}">{{ course.title }}</a>
+        {% if module %}
+        <span class="sep">/</span>
+        <a href="{{ url_for('main.curso_detalhe', course_id=course.id) }}#modulo-{{ module.id }}">{{ module.title }}</a>
+        {% endif %}
+        <span class="sep">/</span>
+        <span class="current">{{ lesson.title }}</span>
+      </nav>
+
+      {% if module %}
+      <div class="lesson-progress-bar">
+        <div class="lpb-track">
+          <div class="lpb-label"><span>PROGRESSO DO MÓDULO · {{ module.title }}</span><span>{{ module_pct }}%</span></div>
+          <div class="progress-track"><div class="progress-fill" style="width:{{ module_pct }}%;background:linear-gradient(90deg,#4D7EFF,#9B59FF);"></div></div>
+        </div>
+        <span class="lpb-pos">{{ ic.icon('flag',13) }} Aula {{ module_position }} de {{ module_total }}</span>
+      </div>
+      {% endif %}
+
+      <div class="lesson-head">
+        <h1>{{ lesson.title }}</h1>
+        <div class="lesson-head-meta">
+          <span class="mono text-muted" style="font-size:12px;display:inline-flex;align-items:center;gap:6px;">{{ ic.icon('clock',13) }} {{ lesson.duration }}</span>
+          <button type="button" class="focus-toggle" id="focusToggle" aria-pressed="false">
+            {{ ic.icon('maximize',14) }} <span id="focusToggleLabel">Modo Foco</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="reader-col">
+
+      {% if blocks %}
+      {#
+        Aula já migrada para o novo Sistema de Blocos (Fase 1). O microdesafio
+        referenciado por um bloco 'microchallenge' já é renderizado dentro do
+        loop abaixo -- por isso `questions` (perguntas soltas legadas) não é
+        renderizado de novo mais abaixo quando `blocks` existe, para não
+        duplicar a mesma pergunta na página.
+      #}
+      <div id="blocksArea">
+        {{ blk.render_blocks(blocks, questions_by_id, answers, gam) }}
+      </div>
+      {% else %}
+      {#
+        Fallback legado: aula ainda não migrada para lesson_block (Seção 20 da
+        spec técnica, migração aditiva aula-por-aula). Nada aqui muda o
+        comportamento que já existia antes da Fase 1 -- só o estilo visual
+        (Fase 2) usa as mesmas classes .lesson-block / .block-card /
+        .lesson-question do renderizador de blocos, para que uma aula ainda
+        não migrada não pareça "de outro sistema".
+      #}
+      {% if lesson.content_type == 'text' %}
+      <div class="lesson-block block-card block-text lesson-text-body">
+        <div class="block-eyebrow">{{ ic.icon('file',12) }} AULA EM TEXTO</div>
+        {{ lesson.content|lesson_markdown }}
+      </div>
+      {% else %}
+      <div class="lesson-block" style="background:#000;border-radius:16px;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-soft);">
+        <div style="width:72px;height:72px;border-radius:50%;background:rgba(77,126,255,.18);display:flex;align-items:center;justify-content:center;">{{ ic.icon('play',28,'#4D7EFF') }}</div>
+      </div>
+      {% if lesson.content_type != 'text' %}
+      <p class="text-muted lesson-block" style="line-height:1.7;">{{ lesson.content }}</p>
+      {% endif %}
+      {% endif %}
+
+      {% if questions %}
+      <div id="questionsArea">
+        {% for q in questions %}
+        {% set prev_answer = answers.get(q.id) %}
+        <div class="lesson-block lesson-question" data-question="{{ q.id }}" data-kind="{{ q.kind }}" data-answered="{{ '1' if (prev_answer and prev_answer.is_correct) else '0' }}">
+          <span class="badge" style="background:{{ '#4D7EFF22' if q.kind=='verification' else '#9B59FF22' }};color:{{ '#4D7EFF' if q.kind=='verification' else '#9B59FF' }};margin-bottom:14px;display:inline-block;">
+            {{ 'VERIFICAÇÃO' if q.kind == 'verification' else ('ATIVIDADE' if q.kind == 'activity' else 'INTERAÇÃO') }}
+          </span>
+          <p style="font-weight:600;margin-bottom:16px;font-size:15.5px;">{{ q.prompt }}</p>
+          <div class="flex-col gap-8 question-options">
+            {% for opt in q.options %}
+            {% set is_prev_choice = prev_answer and prev_answer.option_id == opt.id %}
+            <button type="button" class="btn btn-outline question-option"
+                    style="justify-content:flex-start;text-align:left;{% if is_prev_choice %}border-color:{{ '#22c55e' if prev_answer.is_correct else '#FF6B6B' }};color:{{ '#22c55e' if prev_answer.is_correct else '#FF6B6B' }};{% endif %}"
+                    data-option="{{ opt.id }}" {{ 'disabled' if (prev_answer and prev_answer.is_correct) }}>{{ opt.label }}</button>
+            {% endfor %}
+          </div>
+          <div class="question-feedback {{ 'fb-correct' if (prev_answer and prev_answer.is_correct) else ('fb-wrong' if prev_answer else '') }}" style="{{ '' if prev_answer else 'display:none;' }}">
+            {% if prev_answer %}{{ ic.icon('check',14) if prev_answer.is_correct else ic.icon('x',14) }} <span>{{ 'Correto.' if prev_answer.is_correct else 'Não é bem isso. Tente novamente.' }}</span>{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endif %}
+
+      <div class="lesson-nav">
+        <button class="btn {{ 'btn-primary' if lesson.id in done_ids else 'btn-outline' }}" id="completeBtn" data-course="{{ course.id }}" data-lesson="{{ lesson.id }}" {{ 'disabled' if not can_complete and lesson.id not in done_ids }}>
+          {{ ic.icon('check',15) }} <span id="completeLabel">{{ 'Aula concluída' if lesson.id in done_ids else 'Marcar como concluída' }}</span>
+        </button>
+        {% if not can_complete and lesson.id not in done_ids and questions %}
+        <span class="gate-hint" id="gateHint">Responda a verificação acima para concluir a aula.</span>
+        {% endif %}
+        <span style="flex:1;"></span>
+        {% if module %}<a href="{{ url_for('main.curso_detalhe', course_id=course.id) }}#modulo-{{ module.id }}" class="btn btn-outline">{{ ic.icon('list',15) }} Voltar ao módulo</a>{% endif %}
+        {% if prev_lesson %}<a href="{{ url_for('main.aula', course_id=course.id, lesson_id=prev_lesson.id) }}" class="btn btn-outline">{{ ic.icon('chevron-left',15) }} Anterior</a>{% endif %}
+        {% if next_lesson %}<a href="{{ url_for('main.aula', course_id=course.id, lesson_id=next_lesson.id) }}" class="btn btn-primary">Próxima {{ ic.icon('chevron-right',15) }}</a>{% endif %}
+      </div>
+
+      <div class="card card-pad mb-24">
+        <h3 style="margin-bottom:12px;">Minhas anotações</h3>
+        <textarea class="plain" rows="6" id="noteArea" placeholder="Digite suas anotações aqui...">{{ progress.note if progress else '' }}</textarea>
+        <button class="btn btn-primary btn-sm" style="margin-top:12px;" id="saveNoteBtn" data-course="{{ course.id }}" data-lesson="{{ lesson.id }}">Salvar anotação</button>
+        <span id="noteSaved" class="text-muted" style="font-size:12px;margin-left:10px;display:none;">Salvo!</span>
+      </div>
+
+      <div class="card card-pad" style="margin-bottom:40px;">
+        <h3 style="margin-bottom:12px;">Perguntas e comentários</h3>
+        <p class="text-muted" style="font-size:14px;line-height:1.6;margin:0;">
+          Em breve você poderá tirar dúvidas e comentar diretamente nesta aula.
+        </p>
+      </div>
+
+      </div><!-- /.reader-col -->
+    </div>
+  </div>
+
+  <aside class="lesson-toc" id="lessonToc" style="border-left:1px solid var(--border-soft);">
+    <div class="flex items-center justify-between" style="margin-bottom:6px;">
+      <div class="toc-title" style="margin-bottom:0;">Conteúdo do curso</div>
+      <button type="button" class="icon-btn" id="tocCloseBtn" style="display:none;" aria-label="Fechar sumário">{{ ic.icon('x',15) }}</button>
+    </div>
+    {% for m in modules %}
+    <div class="toc-module">
+      <div class="toc-module-head" data-toc-module-toggle role="button" tabindex="0" aria-expanded="{{ 'true' if m.id == module.id else 'false' }}">
+        {{ ic.icon('chevron-down', 13) }}
+        <span class="toc-module-title">{{ m.title }}</span>
+        <span class="toc-module-pct">{{ modules_pct.get(m.id, 0) }}%</span>
+      </div>
+      <div class="toc-module-track"><div class="fill" style="width:{{ modules_pct.get(m.id, 0) }}%;"></div></div>
+      <div class="toc-lessons" style="{{ 'display:none;' if m.id != module.id else '' }}">
+        {% for l in m.lessons %}
+        <a href="{{ url_for('main.aula', course_id=course.id, lesson_id=l.id) }}"
+           class="toc-lesson {{ 'is-done' if l.id in done_ids }} {{ 'is-current' if l.id==lesson.id }}">
+          <span class="toc-dot"></span>
+          <span class="toc-lesson-title">{{ l.title }}</span>
+          <span class="toc-lesson-dur">{{ l.duration }}</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </aside>
+</div>
+</div>
+
+<button type="button" class="btn btn-outline focus-exit" id="focusExitBtn">{{ ic.icon('minimize',14) }} Sair do Modo Foco</button>
+
+{% endblock %}
+{% block extra_scripts %}
+<script>
+// Conclusão da aula: dois botões (a barra superior e o Bloco 11) chamam o
+// MESMO endpoint /concluir -- nenhuma lógica de conclusão duplicada. Os
+// popups de conquista só disparam a partir da resposta real do servidor
+// (achievement_unlocked / platinum_unlocked), nunca por um elemento ter
+// aparecido na tela (Seção 6/10 do pedido de gamificação).
+function submitConclusao(courseId, lessonId, triggerBtn) {
+  if (triggerBtn && triggerBtn.disabled) return;
+  fetch(`/cursos/${courseId}/aula/${lessonId}/concluir`, {method: 'POST', headers: {'X-CSRFToken': getCsrfToken()}})
+    .then(r => r.json()).then(data => {
+      if (!data.ok) { if (data.error) alert(data.error); return; }
+
+      var completeBtn = document.getElementById('completeBtn');
+      var completeLabel = document.getElementById('completeLabel');
+      if (completeBtn && completeLabel) {
+        completeLabel.textContent = data.done ? 'Aula concluída' : 'Marcar como concluída';
+        completeBtn.classList.toggle('btn-primary', data.done);
+        completeBtn.classList.toggle('btn-outline', !data.done);
+      }
+      var cdBtn = document.getElementById('cdCompleteBtn');
+      if (cdBtn) {
+        cdBtn.disabled = false;
+        cdBtn.innerHTML = data.done
+          ? '{{ ic.icon("check", 15) }} Missão Cumprida'
+          : '{{ ic.icon("flag", 15) }} Concluir Missão';
+        cdBtn.classList.toggle('btn-primary', true);
+        cdBtn.classList.toggle('btn-outline', false);
+      }
+
+      // Conquistas reais desbloqueadas por ESTA chamada (o backend só as
+      // inclui quando de fato acabaram de ser concedidas -- idempotência
+      // garante que re-toggles não repetem o popup).
+      if (data.achievement_unlocked) {
+        window.NeuroAchievements.show({
+          emoji: data.achievement_unlocked.mascot_emoji || '🏆',
+          title: 'Conquista Desbloqueada!',
+          description: data.achievement_unlocked.title + ' — ' + data.achievement_unlocked.description,
+          progressPct: data.platinum_progress ? data.platinum_progress.pct : null,
+          confetti: true,
+        });
+      }
+      if (data.platinum_unlocked) {
+        window.NeuroAchievements.show({
+          emoji: data.platinum_unlocked.mascot_emoji || '🏆',
+          title: 'PLATINA DESBLOQUEADA! 🏆',
+          description: data.platinum_unlocked.title,
+          progressPct: 100,
+          confetti: true,
+          duration: 5000,
+        });
+      }
+    });
+}
+
+document.getElementById('completeBtn').addEventListener('click', function () {
+  submitConclusao(this.dataset.course, this.dataset.lesson, this);
+});
+(function () {
+  var cdBtn = document.getElementById('cdCompleteBtn');
+  if (cdBtn) {
+    cdBtn.addEventListener('click', function () {
+      submitConclusao(this.closest('.completion-dashboard').dataset.course,
+                       this.closest('.completion-dashboard').dataset.lesson, this);
+    });
+  }
+})();
+
+// Etapa 5 / Seção 14 da spec técnica: tentativas ilimitadas. O backend já
+// sobrescreve a resposta a cada tentativa (ON CONFLICT DO UPDATE); o único
+// bug real era de interface -- os botões ficavam desabilitados para sempre
+// depois da primeira resposta, mesmo errada. Agora: resposta ERRADA reabre
+// as opções (depois de um pequeno delay para o aluno ler o feedback);
+// resposta CORRETA marca o desafio como concluído e não reabre (não faz
+// sentido responder de novo algo que já se acertou).
+//
+// Esta mesma lógica agora também governa os Blocos 2 e 10 da Aula 1
+// (story_choice / drag_drop_quiz): ambos são renderizados com a marcação
+// .lesson-question/.question-option/.question-feedback (ver blocks.html),
+// então ganham grading real, XP real e persistência entre reloads de
+// graça -- sem nenhum código novo além do necessário para o efeito visual
+// específico da lacuna arrastável (.dnd-blank), tratado abaixo.
+document.querySelectorAll('.question-option').forEach(function(optBtn){
+  optBtn.addEventListener('click', function(){
+    var card = optBtn.closest('.lesson-question');
+    if (card.dataset.answered === '1') return; // já respondida corretamente
+    var qId = card.dataset.question;
+    fetch(`/questoes/${qId}/responder`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json', 'X-CSRFToken': getCsrfToken()},
+      body: JSON.stringify({option_id: optBtn.dataset.option})
+    }).then(r => r.json()).then(data => {
+      if (!data.ok) return;
+
+      card.querySelectorAll('.question-option').forEach(function(b){
+        b.disabled = true;
+        if (b === optBtn) {
+          b.classList.remove('btn-outline');
+          b.classList.add(data.is_correct ? 'btn-primary' : 'btn-outline');
+          b.style.borderColor = data.is_correct ? '#22c55e' : '#FF6B6B';
+          b.style.color = data.is_correct ? '#22c55e' : '#FF6B6B';
+        }
+      });
+
+      // Efeito visual específico do Bloco 10 (frase com lacuna): preenche
+      // a lacuna com o rótulo da opção escolhida e colore certo/errado.
+      var blank = card.querySelector('[data-dnd-blank]');
+      if (blank) {
+        blank.textContent = optBtn.dataset.dndLabel || optBtn.textContent.trim();
+        blank.classList.add('is-filled');
+        blank.classList.toggle('is-correct', data.is_correct);
+        blank.classList.toggle('is-wrong', !data.is_correct);
+      }
+
+      var fb = card.querySelector('.question-feedback');
+      fb.style.display = 'flex';
+      fb.classList.remove('fb-correct', 'fb-wrong');
+      fb.classList.add(data.is_correct ? 'fb-correct' : 'fb-wrong');
+      var xpNote = (data.is_correct && data.xp_granted > 0) ? (' (+' + data.xp_granted + ' XP)') : '';
+      fb.innerHTML = '<span>' + (data.is_correct ? 'Correto. ' : 'Não é bem isso. ') + (data.feedback || '') + xpNote + '</span>';
+
+      card.classList.remove('just-answered-ok', 'just-answered-wrong');
+      card.classList.add(data.is_correct ? 'just-answered-ok' : 'just-answered-wrong');
+      setTimeout(function () { card.classList.remove('just-answered-ok', 'just-answered-wrong'); }, 1600);
+
+      if (data.is_correct) {
+        card.dataset.answered = '1';
+      } else {
+        // Tentativas ilimitadas: reabre as opções para uma nova tentativa em
+        // vez de bloquear o aluno permanentemente após um erro.
+        setTimeout(function () {
+          card.querySelectorAll('.question-option').forEach(function (b) {
+            b.disabled = false;
+            b.classList.remove('btn-primary');
+            b.classList.add('btn-outline');
+            if (b === optBtn) { b.style.borderColor = ''; b.style.color = ''; }
+          });
+          if (blank) {
+            blank.textContent = '_________';
+            blank.classList.remove('is-filled', 'is-wrong');
+          }
+        }, 1400);
+      }
+
+      if (data.can_complete) {
+        var completeBtn = document.getElementById('completeBtn');
+        completeBtn.disabled = false;
+        var hint = document.getElementById('gateHint');
+        if (hint) hint.style.display = 'none';
+        var cdBtn = document.getElementById('cdCompleteBtn');
+        if (cdBtn) {
+          cdBtn.disabled = false;
+          cdBtn.classList.add('btn-primary');
+          cdBtn.classList.remove('btn-outline');
+        }
+        var cdHint = document.querySelector('.cd-hint');
+        if (cdHint) cdHint.style.display = 'none';
+      }
+    });
+  });
+});
+
+// Drag-and-drop real para o Bloco 10 (além do clique, que já funciona via
+// o handler acima -- .dnd-option também é .question-option).
+document.querySelectorAll('.dnd-quiz [data-dnd-blank]').forEach(function (blank) {
+  blank.addEventListener('dragover', function (e) { e.preventDefault(); });
+  blank.addEventListener('drop', function (e) {
+    e.preventDefault();
+    var card = blank.closest('.lesson-question');
+    if (card.dataset.answered === '1') return;
+    var optId = e.dataTransfer.getData('text/plain');
+    var optBtn = card.querySelector('.question-option[data-option="' + optId + '"]');
+    if (optBtn && !optBtn.disabled) optBtn.click();
+  });
+});
+document.querySelectorAll('.dnd-option').forEach(function (opt) {
+  opt.addEventListener('dragstart', function (e) {
+    e.dataTransfer.setData('text/plain', opt.dataset.option);
+  });
+});
+
+document.getElementById('saveNoteBtn').addEventListener('click', function(){
+  var btn = this;
+  var note = document.getElementById('noteArea').value;
+  fetch(`/cursos/${btn.dataset.course}/aula/${btn.dataset.lesson}/nota`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json', 'X-CSRFToken': getCsrfToken()},
+    body: JSON.stringify({note: note})
+  }).then(() => {
+    var s = document.getElementById('noteSaved');
+    s.style.display = 'inline'; setTimeout(() => s.style.display='none', 1800);
+  });
+});
+
+// ── Flip cards: virada acessível (botão real, Enter/Espaço já funcionam
+// nativamente por ser <button>), estado refletido em aria-pressed para
+// leitores de tela.
+document.querySelectorAll('.flip-card').forEach(function (card) {
+  var btn = card.querySelector('.flip-card-btn');
+  if (!btn) return;
+  btn.addEventListener('click', function () {
+    var flipped = card.dataset.flipped === '1';
+    card.dataset.flipped = flipped ? '0' : '1';
+    btn.setAttribute('aria-pressed', flipped ? 'false' : 'true');
+  });
+});
+
+// ── Bloco 2 · Storytelling / escolha interativa ──────────────────────────
+// Sem JS específico: o bloco é renderizado com a mesma marcação
+// .lesson-question/.question-option (ver blocks.html), então o handler
+// genérico logo acima já cuida de correção, XP real e persistência.
+
+// ── Bloco 3 · Comparador antes/depois (arrastável, mouse/toque/teclado) ──
+document.querySelectorAll('[data-ba-slider]').forEach(function (wrap) {
+  var handle = wrap.querySelector('[data-ba-handle]');
+  var before = wrap.querySelector('[data-ba-before]');
+  function setPct(pct) {
+    pct = Math.max(0, Math.min(100, pct));
+    before.style.clipPath = 'inset(0 ' + (100 - pct) + '% 0 0)';
+    handle.style.left = pct + '%';
+    handle.setAttribute('aria-valuenow', Math.round(pct));
+  }
+  function fromClientX(clientX) {
+    var rect = wrap.getBoundingClientRect();
+    setPct(((clientX - rect.left) / rect.width) * 100);
+  }
+  var dragging = false;
+  handle.addEventListener('pointerdown', function (e) { dragging = true; handle.setPointerCapture(e.pointerId); });
+  handle.addEventListener('pointermove', function (e) { if (dragging) fromClientX(e.clientX); });
+  handle.addEventListener('pointerup', function () { dragging = false; });
+  handle.addEventListener('keydown', function (e) {
+    var current = parseFloat(handle.getAttribute('aria-valuenow')) || 50;
+    if (e.key === 'ArrowLeft') { setPct(current - 5); e.preventDefault(); }
+    if (e.key === 'ArrowRight') { setPct(current + 5); e.preventDefault(); }
+  });
+  setPct(50);
+});
+
+// ── Bloco 5 · Prompt Builder ──────────────────────────────────────────────
+// O aluno monta o comando clicando um item de cada grupo; ao completar
+// todos os grupos, simula a IA "digitando" a resposta (Momento WOW 2).
+document.querySelectorAll('.prompt-builder').forEach(function (card) {
+  var groups = card.querySelectorAll('.pb-group');
+  var preview = card.querySelector('[data-pb-preview]');
+  var responseBox = card.querySelector('[data-pb-response]');
+  var responseTextEl = card.querySelector('[data-pb-response-text]');
+  var selected = {};
+  var typingTimer = null;
+
+  function updatePreview() {
+    var parts = [];
+    groups.forEach(function (g) {
+      var idx = g.dataset.pbGroup;
+      if (selected[idx] !== undefined) {
+        var opt = g.querySelectorAll('.pb-option')[selected[idx]];
+        parts.push(opt.textContent);
+      }
+    });
+    preview.innerHTML = parts.length
+      ? parts.join(' ')
+      : '<span class="pb-cursor-label text-muted">Seu comando aparecerá aqui...</span>';
+
+    if (Object.keys(selected).length === groups.length) {
+      typeResponse();
+    } else {
+      responseBox.style.display = 'none';
+      if (typingTimer) clearInterval(typingTimer);
+    }
+  }
+
+  function typeResponse() {
+    var full = responseTextEl.dataset.fullText;
+    responseBox.style.display = 'block';
+    responseTextEl.innerHTML = '<span class="pb-typing-cursor">▍</span>';
+    var i = 0;
+    if (typingTimer) clearInterval(typingTimer);
+    typingTimer = setInterval(function () {
+      i += Math.max(1, Math.round(full.length / 40));
+      var slice = full.slice(0, i);
+      responseTextEl.innerHTML = slice + '<span class="pb-typing-cursor">▍</span>';
+      if (i >= full.length) {
+        clearInterval(typingTimer);
+        responseTextEl.innerHTML = full;
+        // Momento WOW decorativo (sem XP/conquista real associada -- ver
+        // aula1.txt, Bloco 5): a resposta digitada já É o feedback, sem
+        // precisar de um popup por cima.
+        card.dataset.pbCorrect = '1';
+      }
+    }, 28);
+  }
+
+  groups.forEach(function (g) {
+    var idx = g.dataset.pbGroup;
+    g.querySelectorAll('.pb-option').forEach(function (opt, i) {
+      opt.addEventListener('click', function () {
+        g.querySelectorAll('.pb-option').forEach(function (o) { o.classList.remove('is-selected'); });
+        opt.classList.add('is-selected');
+        selected[idx] = i;
+        updatePreview();
+      });
+    });
+  });
+});
+
+// ── Bloco 6 · Hotspots de descoberta ──────────────────────────────────────
+document.querySelectorAll('.hs-point').forEach(function (point) {
+  point.addEventListener('click', function () {
+    var wasOpen = point.classList.contains('is-open');
+    point.closest('.hs-board').querySelectorAll('.hs-point').forEach(function (p) { p.classList.remove('is-open'); });
+    if (!wasOpen) point.classList.add('is-open');
+  });
+});
+
+// ── Bloco 8 · Dica vs. Erro (accordion) ───────────────────────────────────
+document.querySelectorAll('[data-te-toggle]').forEach(function (item) {
+  item.addEventListener('click', function () {
+    var open = item.getAttribute('aria-expanded') === 'true';
+    item.setAttribute('aria-expanded', open ? 'false' : 'true');
+  });
+});
+
+// ── Bloco 9 · Teste de velocidade humano vs. IA ───────────────────────────
+document.querySelectorAll('.speed-challenge').forEach(function (card) {
+  var startBtn = card.querySelector('[data-spc-start]');
+  var timerEl = card.querySelector('[data-spc-timer]');
+  var resultEl = card.querySelector('[data-spc-result]');
+  if (!startBtn) return;
+  startBtn.addEventListener('click', function () {
+    if (card.dataset.scStarted === '1') return;
+    card.dataset.scStarted = '1';
+    startBtn.style.display = 'none';
+    timerEl.style.display = 'block';
+    var t = 5;
+    timerEl.textContent = t;
+    var interval = setInterval(function () {
+      t -= 1;
+      if (t <= 0) {
+        clearInterval(interval);
+        timerEl.style.display = 'none';
+        resultEl.style.display = 'block';
+        // Momento WOW decorativo (sem XP/conquista real -- ver aula1.txt,
+        // Bloco 9): o resumo revelado já é o pagamento do efeito.
+      } else {
+        timerEl.textContent = t;
+      }
+    }, 1000);
+  });
+});
+
+// ── Bloco 10 · Quiz de arrastar (drag & drop, com fallback de clique) ─────
+// Sem JS de correção aqui: o bloco também é .lesson-question/.question-option
+// (ver blocks.html) -- o handler genérico já concede XP real (reward_xp=50)
+// e libera a conclusão via `can_complete`. O único código específico deste
+// bloco é o suporte a arrastar-e-soltar, registrado mais acima junto do
+// handler genérico (blocos "Drag-and-drop real para o Bloco 10").
+
+// ── Bloco 11 · Dashboard de conclusão ─────────────────────────────────────
+// Sem gatilho automático aqui: o popup de conquista só aparece como reação
+// à resposta REAL de /concluir (ver submitConclusao acima) -- nunca porque
+// este bloco ficou visível na tela (Seção 6 do pedido de gamificação).
+// O botão "Concluir Missão" dentro do bloco já está ligado a submitConclusao
+// logo no início deste script.
+
+// ── Bloco 12 · CTA de transição para a próxima aula ───────────────────────
+(function () {
+  var ctaBtn = document.getElementById('ctaNextBtn');
+  {% if next_lesson %}
+  if (ctaBtn) {
+    ctaBtn.addEventListener('click', function () {
+      window.location.href = "{{ url_for('main.aula', course_id=course.id, lesson_id=next_lesson.id) }}";
+    });
+  }
+  {% else %}
+  if (ctaBtn) ctaBtn.addEventListener('click', function () {
+    window.location.href = "{{ url_for('main.curso_detalhe', course_id=course.id) }}";
+  });
+  {% endif %}
+})();
+
+// ── Modo Foco: esconde sidebar/topbar/TOC/breadcrumb, amplia a área de
+// leitura. Preferência lembrada nesta aba (não persiste entre sessões de
+// propósito -- é um estado de leitura pontual, não uma configuração).
+(function () {
+  var toggle = document.getElementById('focusToggle');
+  var exitBtn = document.getElementById('focusExitBtn');
+  var label = document.getElementById('focusToggleLabel');
+  function setFocus(on) {
+    document.body.classList.toggle('focus-mode', on);
+    if (toggle) toggle.classList.toggle('is-active', on);
+    if (toggle) toggle.setAttribute('aria-pressed', on ? 'true' : 'false');
+    if (label) label.textContent = on ? 'Sair do Modo Foco' : 'Modo Foco';
+    try { sessionStorage.setItem('neuroacademy:focusMode', on ? '1' : '0'); } catch (e) {}
+  }
+  if (toggle) toggle.addEventListener('click', function () { setFocus(!document.body.classList.contains('focus-mode')); });
+  if (exitBtn) exitBtn.addEventListener('click', function () { setFocus(false); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && document.body.classList.contains('focus-mode')) setFocus(false);
+  });
+  try {
+    if (sessionStorage.getItem('neuroacademy:focusMode') === '1') setFocus(true);
+  } catch (e) {}
+})();
+
+// ── Barra de progresso de leitura: acompanha a rolagem da página (não é a
+// mesma coisa que progresso do módulo/aula -- é só feedback de "quanto
+// falta para o fim do texto").
+(function () {
+  var fill = document.getElementById('readingProgressFill');
+  if (!fill) return;
+  function update() {
+    var doc = document.documentElement;
+    var scrollable = doc.scrollHeight - doc.clientHeight;
+    var pct = scrollable > 0 ? Math.min(100, (window.scrollY / scrollable) * 100) : 0;
+    fill.style.width = pct + '%';
+  }
+  document.addEventListener('scroll', update, {passive: true});
+  window.addEventListener('resize', update);
+  update();
+})();
+
+// ── Sumário do curso: no mobile vira uma gaveta; no desktop cada módulo
+// pode ser recolhido para reduzir ruído visual quando o curso tem muitos
+// módulos.
+(function () {
+  var toc = document.getElementById('lessonToc');
+  var mobileToggle = document.getElementById('tocMobileToggle');
+  var closeBtn = document.getElementById('tocCloseBtn');
+  if (mobileToggle && toc) {
+    mobileToggle.addEventListener('click', function () {
+      var open = toc.classList.toggle('is-open');
+      mobileToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      closeBtn.style.display = open ? 'flex' : 'none';
+    });
+  }
+  if (closeBtn && toc) {
+    closeBtn.addEventListener('click', function () {
+      toc.classList.remove('is-open');
+      if (mobileToggle) mobileToggle.setAttribute('aria-expanded', 'false');
+      closeBtn.style.display = 'none';
+    });
+  }
+  document.querySelectorAll('[data-toc-module-toggle]').forEach(function (head) {
+    function toggleModule() {
+      var lessonsEl = head.parentElement.querySelector('.toc-lessons');
+      if (!lessonsEl) return;
+      var open = lessonsEl.style.display !== 'none';
+      lessonsEl.style.display = open ? 'none' : 'flex';
+      head.setAttribute('aria-expanded', open ? 'false' : 'true');
+    }
+    head.addEventListener('click', toggleModule);
+    head.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleModule(); }
+    });
+  });
+})();
+</script>
+{% endblock %}

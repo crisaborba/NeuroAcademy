@@ -1,0 +1,76 @@
+{% extends "base_app.html" %}
+{% block title %}Conquistas — NeuroAcademy{% endblock %}
+{% block content %}
+<div class="page-narrow">
+  <div class="flex items-center justify-between mb-24" style="flex-wrap:wrap;gap:12px;">
+    <div>
+      <h1 style="font-size:22px;margin-bottom:4px;">Conquistas</h1>
+      <p class="text-muted" style="font-size:13px;">Sua coleção de troféus na NeuroAcademy.</p>
+    </div>
+    <a href="{{ url_for('main.perfil') }}" class="btn btn-outline btn-sm">{{ ic.icon('chevron-left',14) }} Voltar ao perfil</a>
+  </div>
+
+  {# Progresso geral rumo à Platina -- valor 100% calculado pelo backend
+     (gamification.platinum_progress), nunca um número fixo no template. #}
+  <div class="card card-pad mb-24" style="background:linear-gradient(135deg,rgba(0,212,255,.08),rgba(155,89,255,.08));">
+    <div class="flex items-center justify-between mb-8" style="flex-wrap:wrap;gap:8px;">
+      <span style="font-weight:700;display:flex;align-items:center;gap:8px;">{{ ic.icon('trophy',18,'#00D4FF') }} Platina NeuroAcademy</span>
+      <span class="mono" style="font-size:13px;color:var(--cyan);">{{ platinum.unlocked }}/{{ platinum.total }} · {{ platinum.pct }}%</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" style="width:{{ platinum.pct }}%;background:linear-gradient(90deg,#00D4FF,#9B59FF);"></div></div>
+  </div>
+
+  <div class="grid-cards" style="grid-template-columns:repeat(4,1fr);margin-bottom:32px;">
+    {% for label, value in [('XP total', stats.xp_total), ('Aulas concluídas', stats.lessons_done), ('Sequência', stats.streak), ('Certificados', stats.certificates)] %}
+    <div class="card card-pad" style="text-align:center;">
+      <div style="font-family:var(--font-head);font-size:24px;font-weight:800;">{{ value }}</div>
+      <div class="text-muted" style="font-size:12px;">{{ label }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <h3 style="margin-bottom:16px;">Desbloqueadas</h3>
+  <div class="grid-cards mb-32">
+    {% for entry in catalog if entry.unlocked %}
+    <div class="card card-pad" style="border-color:{{ entry.achievement.rarity_color }}44;">
+      <div class="flex items-center gap-12 mb-8">
+        {% if entry.achievement.mascot_image_url %}
+          <img src="{{ entry.achievement.mascot_image_url }}" alt="" style="width:40px;height:40px;border-radius:10px;" />
+        {% else %}
+          <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,{{ entry.achievement.rarity_color }},{{ entry.achievement.rarity_color }}88);display:flex;align-items:center;justify-content:center;font-size:20px;">{{ entry.achievement.mascot_emoji }}</div>
+        {% endif %}
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:14px;">{{ entry.achievement.title }}</div>
+          <span class="mono" style="font-size:10px;color:{{ entry.achievement.rarity_color }};">{{ entry.achievement.rarity }}</span>
+        </div>
+      </div>
+      <p class="text-muted" style="font-size:12.5px;line-height:1.5;margin-bottom:8px;">{{ entry.achievement.description }}</p>
+      <div class="flex items-center justify-between" style="font-size:11.5px;">
+        <span style="color:var(--yellow);">+{{ entry.achievement.xp }} XP</span>
+        <span class="text-muted">{{ entry.unlocked_at[:10] if entry.unlocked_at else '' }}</span>
+      </div>
+    </div>
+    {% else %}
+    <p class="text-muted">Nenhuma conquista desbloqueada ainda. Comece uma aula para conquistar a primeira.</p>
+    {% endfor %}
+  </div>
+
+  <h3 style="margin-bottom:16px;">Bloqueadas</h3>
+  <div class="grid-cards">
+    {% for entry in catalog if not entry.unlocked %}
+    <div class="card card-pad" style="opacity:.6;">
+      <div class="flex items-center gap-12 mb-8">
+        <div style="width:40px;height:40px;border-radius:10px;background:var(--secondary);display:flex;align-items:center;justify-content:center;">{{ ic.icon('lock',18,'var(--muted)') }}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:14px;">???</div>
+          <span class="mono" style="font-size:10px;color:var(--muted);">{{ entry.achievement.rarity }}</span>
+        </div>
+      </div>
+      <p class="text-muted" style="font-size:12.5px;line-height:1.5;">{{ entry.achievement.unlock_criteria or 'Complete determinado objetivo para descobrir.' }}</p>
+    </div>
+    {% else %}
+    <p class="text-muted">Você já desbloqueou todas as conquistas disponíveis até agora. 🎉</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

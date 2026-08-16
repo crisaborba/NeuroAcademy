@@ -1,0 +1,32 @@
+{% extends "base_app.html" %}
+{% block title %}{{ post.title }} — Blog NeuroAcademy{% endblock %}
+{% block content %}
+<div class="page-narrow">
+  <a href="{{ url_for('main.blog') }}" style="display:inline-flex;align-items:center;gap:6px;color:var(--muted);text-decoration:none;font-size:13px;margin-bottom:20px;">{{ ic.icon('chevron-left',14) }} Voltar ao blog</a>
+  <span class="badge" style="background:rgba(77,126,255,.15);color:var(--primary);">{{ post.tag }}</span>
+  <h1 style="font-size:clamp(26px,4vw,38px);margin:16px 0;line-height:1.25;">{{ post.title }}</h1>
+  <div class="flex items-center gap-16 mono text-muted" style="font-size:13px;margin-bottom:28px;">
+    <span>{{ post.author }}</span><span>·</span><span>{{ post.date_label }}</span><span>·</span><span>{{ post.read_time }} de leitura</span>
+  </div>
+  <div class="course-thumb" style="height:360px;border-radius:16px;margin-bottom:32px;"><img src="{{ post.img_url }}" alt="{{ post.title }}"></div>
+
+  <div style="font-size:16px;line-height:1.85;color:var(--muted2);">
+    <p>{{ post.excerpt }}</p>
+    {% if post.content %}
+    <p>{{ post.content }}</p>
+    {% else %}
+    <p>Este artigo explora os principais pontos sobre o tema, trazendo uma visão prática de como estudantes e profissionais podem aplicar esse conhecimento no dia a dia. A NeuroAcademy busca sempre traduzir tendências complexas de inteligência artificial em passos concretos e acionáveis.</p>
+    <p>Se você quer se aprofundar ainda mais no assunto, confira os cursos relacionados na plataforma ou converse com a NeuroIA, nossa tutora virtual, para receber recomendações personalizadas.</p>
+    {% endif %}
+  </div>
+
+  <div class="card card-pad" style="margin-top:40px;">
+    <h3 style="margin-bottom:16px;">Continue lendo</h3>
+    <div class="flex-col gap-12">
+      {% for o in others %}
+      <a href="{{ url_for('main.blog_post', post_id=o.id) }}" style="text-decoration:none;color:var(--muted2);font-size:14px;padding:10px 0;border-top:1px solid var(--border-soft);display:block;">{{ o.title }}</a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

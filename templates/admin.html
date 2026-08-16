@@ -1,0 +1,82 @@
+{% extends "base_app.html" %}
+{% block title %}Administração — NeuroAcademy{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="eyebrow">{{ ic.icon('shield',12) }} ADMINISTRAÇÃO</div>
+  <h1 class="section-title" style="margin-bottom:24px;">Painel administrativo</h1>
+
+  <div class="grid-cards" style="grid-template-columns:repeat(4,1fr);margin-bottom:32px;">
+    {% for label,value,color,icon in [('Usuários totais', total_users, '#4D7EFF','users'),
+                                       ('Cursos publicados', total_courses, '#9B59FF','book'),
+                                       ('Certificados emitidos', total_certificates, '#22c55e','award'),
+                                       ('Avaliação média', avg_rating, '#FFD166','star')] %}
+    <div class="card card-pad">
+      <div class="flex justify-between items-center mb-8">
+        <div style="color:{{ color }};">{{ ic.icon(icon,18,color) }}</div>
+      </div>
+      <div style="font-family:var(--font-head);font-size:24px;font-weight:800;">{{ value }}</div>
+      <div class="text-muted" style="font-size:12px;">{{ label }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="flex gap-8" style="flex-wrap:wrap;margin-bottom:32px;">
+    {% for label, color in [('Novo curso','#4D7EFF'),('Novo artigo','#9B59FF'),('Enviar newsletter','#FFD166'),('Ver relatório','#22c55e'),('Gerenciar cupons','#FF6B6B')] %}
+    <button class="pill" style="border-color:{{ color }}44;color:{{ color }};" onclick="document.getElementById('newCourseForm').scrollIntoView({behavior:'smooth'})">{{ label }}</button>
+    {% endfor %}
+  </div>
+
+  <div class="grid-2col" style="align-items:start;gap:24px;">
+    <div class="card card-pad">
+      <h3 style="margin-bottom:16px;">Usuários recentes</h3>
+      <table class="table">
+        <thead><tr><th>Nome</th><th>E-mail</th><th>Plano</th></tr></thead>
+        <tbody>
+        {% for u in recent_users %}
+        <tr><td>{{ u.name }}</td><td>{{ u.email }}</td><td>{{ u.plan }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="card card-pad">
+      <h3 style="margin-bottom:16px;">Cursos recentes</h3>
+      <table class="table">
+        <thead><tr><th>Título</th><th>Alunos</th><th>Nota</th></tr></thead>
+        <tbody>
+        {% for c in recent_courses %}
+        <tr><td>{{ c.title }}</td><td>{{ c.students_count }}</td><td>{{ c.rating }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card card-pad" id="newCourseForm" style="margin-top:24px;">
+    <h3 style="margin-bottom:16px;">Criar novo curso</h3>
+    <form method="post" action="{{ url_for('main.admin_novo_curso') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-group"><label class="form-label">Título</label><input class="plain" name="title" required></div>
+      <div class="form-group"><label class="form-label">Descrição</label><textarea class="plain" name="description" rows="2"></textarea></div>
+      <div class="flex gap-12">
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">Categoria</label>
+          <select class="plain" name="category">
+            {% for c in ['Fundamentos','Ferramentas','Prompt','Carreira','Dados','Automação'] %}<option>{{ c }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">Nível</label>
+          <select class="plain" name="level">
+            {% for l in ['Iniciante','Intermediário','Avançado'] %}<option>{{ l }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">Carga horária</label>
+          <input class="plain" name="hours_label" placeholder="ex: 4h">
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Publicar curso</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

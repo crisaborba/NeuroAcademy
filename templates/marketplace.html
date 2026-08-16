@@ -1,0 +1,56 @@
+{% extends "base_app.html" %}
+{% block title %}Marketplace — NeuroAcademy{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="eyebrow purple">{{ ic.icon('bag',12) }} MARKETPLACE</div>
+  <h1 class="section-title" style="margin-bottom:8px;">Cursos premium de parceiros</h1>
+  <p class="text-muted mb-24">Cursos avançados criados por especialistas e instrutores convidados.</p>
+
+  <form method="get" class="card" style="padding:16px 18px;margin-bottom:32px;">
+    <div class="input-wrap" style="background:rgba(255,255,255,.04);border-color:rgba(77,126,255,.12);">
+      {{ ic.icon('search',13,'#6B7A99') }}
+      <input type="text" name="busca" value="{{ q }}" placeholder="Buscar cursos do marketplace...">
+    </div>
+  </form>
+
+  {% if featured %}
+  <h3 style="margin-bottom:16px;">Em destaque</h3>
+  <div class="grid-cards mb-32">
+    {% for c in featured %}
+    <div class="card course-card" style="text-decoration:none;">
+      <div class="course-thumb"><img src="{{ c.img_url }}" alt="{{ c.title }}"></div>
+      <div class="course-body">
+        <span class="badge" style="background:{{ c.tag_color }}22;color:{{ c.tag_color }};margin-bottom:10px;display:inline-block;">{{ c.tag }}</span>
+        <h3 class="course-title">{{ c.title }}</h3>
+        <p class="text-muted" style="font-size:12px;margin-bottom:10px;">por {{ c.instructor }}</p>
+        <div class="flex items-center gap-8">
+          <span style="font-family:var(--font-head);font-size:20px;font-weight:800;">{{ c.price }}</span>
+          {% if c.original_price %}<span class="text-muted" style="font-size:13px;text-decoration:line-through;">{{ c.original_price }}</span>{% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <h3 style="margin-bottom:16px;">Todos os cursos</h3>
+  <div class="grid-cards">
+    {% for c in others %}
+    <div class="card course-card">
+      <div class="course-thumb"><img src="{{ c.img_url }}" alt="{{ c.title }}"></div>
+      <div class="course-body">
+        <span class="badge" style="background:{{ c.tag_color }}22;color:{{ c.tag_color }};margin-bottom:10px;display:inline-block;">{{ c.tag }}</span>
+        <h3 class="course-title">{{ c.title }}</h3>
+        <p class="text-muted" style="font-size:12px;margin-bottom:10px;">por {{ c.instructor }}</p>
+        <div class="flex items-center gap-8">
+          <span style="font-family:var(--font-head);font-size:18px;font-weight:800;">{{ c.price }}</span>
+          {% if c.original_price %}<span class="text-muted" style="font-size:12px;text-decoration:line-through;">{{ c.original_price }}</span>{% endif %}
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <p class="text-muted">Nenhum curso encontrado.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

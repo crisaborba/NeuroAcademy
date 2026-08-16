@@ -1,0 +1,49 @@
+{% extends "base_app.html" %}
+{% block title %}Cursos — NeuroAcademy{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="eyebrow">{{ ic.icon('book',12) }} CURSOS</div>
+  <h1 class="section-title" style="margin-bottom:8px;">Todos os cursos</h1>
+  <p class="text-muted mb-24">Encontre o curso certo para o seu momento de aprendizado.</p>
+
+  <form method="get" class="card" style="padding:16px 18px;margin-bottom:24px;">
+    <div class="flex gap-12" style="flex-wrap:wrap;align-items:center;">
+      <div class="input-wrap" style="flex:1;min-width:220px;background:rgba(255,255,255,.04);border-color:rgba(77,126,255,.12);">
+        {{ ic.icon('search',15,'#6B7A99') }}
+        <input type="text" name="busca" value="{{ q }}" placeholder="Buscar cursos...">
+      </div>
+      <select name="nivel" class="plain" style="width:auto;" onchange="this.form.submit()">
+        {% for lv in levels %}<option value="{{ lv }}" {{ 'selected' if lv==active_level }}>{{ lv }}</option>{% endfor %}
+      </select>
+      <button class="btn btn-primary btn-sm" type="submit">Filtrar</button>
+    </div>
+  </form>
+
+  <div class="flex gap-8" style="flex-wrap:wrap;margin-bottom:32px;">
+    {% for cat in categories %}
+    <a href="{{ url_for('main.cursos', categoria=cat, nivel=active_level, busca=q) }}" class="pill {{ 'active' if cat==active_category }}">{{ cat }}</a>
+    {% endfor %}
+  </div>
+
+  <div class="grid-cards">
+    {% for c in courses %}
+    <a href="{{ url_for('main.curso_detalhe', course_id=c.id) }}" class="card course-card">
+      <div class="course-thumb"><img src="{{ c.img_url }}" alt="{{ c.title }}"></div>
+      <div class="course-body">
+        <div class="flex justify-between items-center" style="margin-bottom:10px;">
+          <span class="course-tag" style="margin:0;color:{{ c.tag_color }};">{{ c.tag }}</span>
+          {% if c.free %}<span class="badge" style="background:rgba(34,197,94,.12);color:#22c55e;">GRATUITO</span>{% endif %}
+        </div>
+        <h3 class="course-title">{{ c.title }}</h3>
+        <p class="course-desc">{{ c.description }}</p>
+        <div class="course-meta">
+          <span>{{ c.lessons_count }} aulas</span><span>{{ c.hours_label }}</span><span>{{ c.level }}</span>
+        </div>
+      </div>
+    </a>
+    {% else %}
+    <p class="text-muted">Nenhum curso encontrado com esses filtros.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

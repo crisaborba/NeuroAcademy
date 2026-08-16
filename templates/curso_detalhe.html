@@ -1,0 +1,100 @@
+{% extends "base_app.html" %}
+{% block title %}{{ course.title }} — NeuroAcademy{% endblock %}
+{% block content %}
+<div class="page">
+  <a href="{{ url_for('main.cursos') }}" style="display:inline-flex;align-items:center;gap:6px;color:var(--muted);text-decoration:none;font-size:13px;margin-bottom:20px;">{{ ic.icon('chevron-left',14) }} Voltar aos cursos</a>
+
+  <div class="grid-2col" style="align-items:start;gap:40px;">
+    <div>
+      {% if not course.get('content_complete', 1) %}
+      <div class="alert" style="background:rgba(255,209,102,.1);border:1px solid rgba(255,209,102,.3);color:#FFD166;">
+        {{ ic.icon('zap',13,'#FFD166') }} Este curso está em produção. Os módulos abaixo já estão disponíveis; novos módulos serão publicados em breve.
+      </div>
+      {% endif %}
+      <span class="course-tag" style="color:{{ course.tag_color }};">{{ course.tag }}</span>
+      <h1 style="font-size:clamp(26px,3.5vw,38px);margin:10px 0 16px;line-height:1.2;">{{ course.title }}</h1>
+      <p class="text-muted" style="font-size:16px;line-height:1.7;margin-bottom:24px;">{{ course.description }}</p>
+
+      <div class="flex gap-16" style="flex-wrap:wrap;margin-bottom:28px;">
+        <div class="flex items-center gap-8">{{ ic.icon('clock',14,'#6B7A99') }}<span style="font-size:13px;color:var(--muted);">{{ course.hours_label }} de conteúdo</span></div>
+        <div class="flex items-center gap-8">{{ ic.icon('book',14,'#6B7A99') }}<span style="font-size:13px;color:var(--muted);">{{ course.lessons_count }} aulas</span></div>
+        <div class="flex items-center gap-8">{{ ic.icon('globe',14,'#6B7A99') }}<span style="font-size:13px;color:var(--muted);">Português (BR)</span></div>
+      </div>
+
+      {% if course.modules %}
+      <h3 style="margin-bottom:16px;">Conteúdo do curso</h3>
+      <div class="flex-col gap-12">
+        {% for m in course.modules %}
+        <div class="card card-pad" id="modulo-{{ m.id }}">
+          <div style="font-weight:700;margin-bottom:12px;">{{ m.title }}</div>
+          <div class="flex-col gap-8">
+            {% for l in m.lessons %}
+            <div class="flex items-center justify-between" style="padding:8px 0;border-top:1px solid var(--border-soft);">
+              <div class="flex items-center gap-12">
+                {% if l.id in lesson_progress_ids %}
+                  <span style="color:#22c55e;">{{ ic.icon('check',15,'#22c55e') }}</span>
+                {% elif l.free or enrollment %}
+                  <span style="color:var(--primary);">{{ ic.icon('play',13,'#4D7EFF') }}</span>
+                {% else %}
+                  <span style="color:var(--muted);">{{ ic.icon('lock',13,'#6B7A99') }}</span>
+                {% endif %}
+                <span style="font-size:14px;">{{ l.title }}</span>
+                {% if l.free %}<span class="badge" style="background:rgba(34,197,94,.12);color:#22c55e;">GRÁTIS</span>{% endif %}
+              </div>
+              <span class="mono text-muted" style="font-size:12px;">{{ l.duration }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="card card-pad" style="margin-top:32px;">
+        <h3 style="margin-bottom:12px;">Avaliações de alunos</h3>
+        <p class="text-muted" style="font-size:14px;line-height:1.6;margin:0;">
+          Este curso ainda não possui avaliações. Assim que os primeiros alunos concluírem o conteúdo,
+          as avaliações reais aparecerão aqui.
+        </p>
+      </div>
+    </div>
+
+    <div class="card card-pad" style="position:sticky;top:88px;">
+      <div class="course-thumb" style="border-radius:12px;margin:-24px -24px 20px;width:calc(100% + 48px);"><img src="{{ course.img_url }}" alt="{{ course.title }}"></div>
+      <div class="flex items-center gap-8" style="margin-bottom:18px;">
+        <span class="price-value" style="font-size:28px;">{{ course.price if not course.free else 'Grátis' }}</span>
+      </div>
+
+      {% if enrollment %}
+        <div class="mb-16">
+          <div class="flex justify-between mb-8" style="font-size:13px;">
+            <span class="text-muted">Seu progresso</span><span class="mono" style="color:var(--primary);">{{ enrollment.progress_pct }}%</span>
+          </div>
+          <div class="progress-track"><div class="progress-fill" style="width:{{ enrollment.progress_pct }}%;background:linear-gradient(90deg,#4D7EFF,#9B59FF);"></div></div>
+        </div>
+        {% if course.modules and course.modules[0].lessons %}
+        <a href="{{ url_for('main.aula', course_id=course.id, lesson_id=course.modules[0].lessons[0].id) }}" class="btn btn-primary btn-block">Continuar curso {{ ic.icon('arrow-right',15) }}</a>
+        {% endif %}
+        {% if enrollment.progress_pct == 100 %}
+        <a href="{{ url_for('main.certificado', course_id=course.id) }}" class="btn btn-outline btn-block" style="margin-top:10px;">Ver certificado {{ ic.icon('award',15) }}</a>
+        {% endif %}
+      {% else %}
+        {% if current_user.is_authenticated %}
+        <form method="post" action="{{ url_for('main.matricular', course_id=course.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-primary btn-block">Matricular-se agora {{ ic.icon('arrow-right',15) }}</button>
+        </form>
+        {% else %}
+        <a href="{{ url_for('main.login') }}" class="btn btn-primary btn-block">Entrar para se matricular</a>
+        {% endif %}
+      {% endif %}
+
+      <div class="flex-col gap-8" style="margin-top:20px;">
+        {% for f in ['Acesso vitalício ao conteúdo','Certificado de conclusão','Suporte da comunidade','Atualizações incluídas'] %}
+        <div class="flex items-center gap-8" style="font-size:13px;color:var(--muted2);">{{ ic.icon('check',14,'#4D7EFF') }}{{ f }}</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

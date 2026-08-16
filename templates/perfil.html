@@ -1,0 +1,57 @@
+{% extends "base_app.html" %}
+{% block title %}Meu Perfil — NeuroAcademy{% endblock %}
+{% block content %}
+<div class="page-narrow">
+  <div class="card card-pad flex items-center gap-16 mb-24" style="flex-wrap:wrap;">
+    <div class="topbar-avatar" style="width:72px;height:72px;font-size:28px;">{{ current_user.initial }}</div>
+    <div style="flex:1;min-width:200px;">
+      <h1 style="font-size:22px;margin-bottom:4px;">{{ current_user.name }}</h1>
+      <div class="text-muted" style="font-size:13px;">@{{ current_user.username }} · {{ current_user.plan }}</div>
+      {% if current_user.bio %}<p style="font-size:14px;color:var(--muted2);margin-top:10px;">{{ current_user.bio }}</p>{% endif %}
+    </div>
+    <a href="{{ url_for('main.conquistas') }}" class="btn btn-outline btn-sm">{{ ic.icon('trophy',14) }} Conquistas</a>
+    <a href="{{ url_for('main.configuracoes') }}" class="btn btn-outline btn-sm">{{ ic.icon('edit',14) }} Editar perfil</a>
+  </div>
+
+  <div class="grid-cards" style="grid-template-columns:repeat(4,1fr);margin-bottom:32px;">
+    {% for label, value in [('Publicações', posts_count), ('Respostas', comments_count), ('Certificados', certificates|length), ('Pontos', current_user.points)] %}
+    <div class="card card-pad" style="text-align:center;">
+      <div style="font-family:var(--font-head);font-size:24px;font-weight:800;">{{ value }}</div>
+      <div class="text-muted" style="font-size:12px;">{{ label }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <h3 style="margin-bottom:16px;">Meus cursos</h3>
+  <div class="flex-col gap-12 mb-32">
+    {% for e in enrollments %}
+    <a href="{{ url_for('main.curso_detalhe', course_id=e.course.id) }}" class="card card-pad" style="display:block;text-decoration:none;">
+      <div class="flex justify-between items-center mb-8">
+        <span style="font-weight:600;font-size:14px;">{{ e.course.title }}</span>
+        <span class="mono" style="font-size:12px;color:{{ e.course.tag_color }};">{{ e.progress_pct }}%</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:{{ e.progress_pct }}%;background:linear-gradient(90deg,{{ e.course.tag_color }},{{ e.course.tag_color }}88);"></div></div>
+    </a>
+    {% else %}
+    <p class="text-muted">Você ainda não se matriculou em nenhum curso. <a href="{{ url_for('main.cursos') }}" style="color:var(--primary);">Explorar cursos</a></p>
+    {% endfor %}
+  </div>
+
+  <h3 style="margin-bottom:16px;">Certificados</h3>
+  <div class="grid-cards">
+    {% for c in certificates %}
+    <a href="{{ url_for('main.certificado', course_id=c.course.id) }}" class="card card-pad" style="text-decoration:none;">
+      <div class="flex items-center gap-12">
+        {{ ic.icon('award',24,'#FFD166') }}
+        <div>
+          <div style="font-weight:600;font-size:14px;">{{ c.course.title }}</div>
+          <div class="text-muted" style="font-size:12px;">Emitido em {{ c.issued_at.strftime('%d/%m/%Y') }}</div>
+        </div>
+      </div>
+    </a>
+    {% else %}
+    <p class="text-muted">Nenhum certificado ainda. Complete um curso para receber o seu.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

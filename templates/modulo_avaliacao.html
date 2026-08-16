@@ -1,0 +1,79 @@
+{% extends "base_app.html" %}
+{% block title %}Avaliação — {{ module.title }} — {{ course.title }}{% endblock %}
+{% block content %}
+{#
+  Etapa 6 da tarefa (Fase 1): apenas a fundação da avaliação de módulo.
+  Esta tela é deliberadamente simples -- sem revisão de gabarito, sem
+  progresso visual, sem contagem regressiva. A experiência completa
+  (Fase 7 do plano de implementação) fica para depois; aqui o objetivo é
+  provar que a arquitetura (schema + correção server-side + tentativas
+  ilimitadas) funciona ponta a ponta.
+#}
+<div style="padding:32px;max-width:760px;">
+  <a href="{{ url_for('main.curso_detalhe', course_id=course.id) }}" style="display:inline-flex;align-items:center;gap:6px;color:var(--muted);text-decoration:none;font-size:13px;margin-bottom:16px;">{{ ic.icon('chevron-left',14) }} {{ course.title }}</a>
+  <h1 style="font-size:22px;margin-bottom:4px;">Avaliação do módulo: {{ module.title }}</h1>
+  <p class="text-muted" style="margin-bottom:24px;">Aprovação com {{ assessment.pass_threshold_pct }}% ou mais. Tentativas ilimitadas.</p>
+
+  {% if last_attempt %}
+  <div class="card card-pad mb-16" style="border-left:3px solid {{ '#22c55e' if last_attempt.passed else '#FF6B6B' }};">
+    <p style="margin:0;">Última tentativa (#{{ last_attempt.attempt_number }}): <strong>{{ last_attempt.score_pct }}%</strong> —
+      {{ 'aprovado' if last_attempt.passed else 'não aprovado' }}.</p>
+  </div>
+  {% endif %}
+
+  {% if not questions %}
+  <div class="card card-pad">Esta avaliação ainda não tem questões cadastradas.</div>
+  {% else %}
+  <form id="assessmentForm">
+    {% for q in questions %}
+    <div class="card card-pad mb-16 assessment-question" data-question="{{ q.id }}">
+      <p style="font-weight:600;margin-bottom:14px;">{{ loop.index }}. {{ q.prompt }}</p>
+      <div class="flex-col gap-8">
+        {% for opt in q.options %}
+        <label style="display:flex;align-items:center;gap:8px;">
+          <input type="radio" name="q_{{ q.id }}" value="{{ opt.id }}">
+          <span>{{ opt.label }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-primary" id="submitAssessmentBtn"
+            data-course="{{ course.id }}" data-module="{{ module.id }}">Enviar avaliação</button>
+    <div id="assessmentResult" class="mt-16"></div>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+var form = document.getElementById('assessmentForm');
+if (form) {
+  form.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var btn = document.getElementById('submitAssessmentBtn');
+    var answers = {};
+    document.querySelectorAll('.assessment-question').forEach(function (card) {
+      var qId = card.dataset.question;
+      var checked = card.querySelector('input[type=radio]:checked');
+      if (checked) answers[qId] = checked.value;
+    });
+    fetch(`/cursos/${btn.dataset.course}/modulo/${btn.dataset.module}/avaliacao/enviar`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken()},
+      body: JSON.stringify({answers: answers})
+    }).then(r => r.json()).then(function (data) {
+      var result = document.getElementById('assessmentResult');
+      if (!data.ok) {
+        result.textContent = data.error || 'Não foi possível enviar a avaliação.';
+        result.style.color = '#FF6B6B';
+        return;
+      }
+      result.textContent = (data.passed ? '✓ Aprovado ' : '✗ Não aprovado ') +
+        `com ${data.score_pct}% (tentativa #${data.attempt_number}). Você pode tentar novamente.`;
+      result.style.color = data.passed ? '#22c55e' : '#FF6B6B';
+    });
+  });
+}
+</script>
+{% endblock %}

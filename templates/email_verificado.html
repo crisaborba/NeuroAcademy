@@ -1,0 +1,14 @@
+{% extends "base_public.html" %}
+{% block title %}E-mail confirmado — NeuroAcademy{% endblock %}
+{% block body %}
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;">
+  <div>
+    <div style="width:56px;height:56px;border-radius:50%;background:rgba(34,197,94,.15);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;">{{ ic.icon('check',28,'#22c55e') }}</div>
+    <h1 style="font-size:clamp(28px,4vw,42px);margin-bottom:16px;">E-mail confirmado!</h1>
+    <p style="color:var(--muted);font-size:16px;max-width:440px;margin:0 auto 32px;line-height:1.65;">
+      O e-mail de <strong style="color:var(--fg);">{{ user.email }}</strong> foi verificado com sucesso.
+    </p>
+    <a href="{{ url_for('main.home') }}" class="btn btn-primary">Ir para a plataforma</a>
+  </div>
+</div>
+{% endblock %}

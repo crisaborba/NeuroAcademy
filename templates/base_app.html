@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}NeuroAcademy{% endblock %}</title>
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+{% import "partials/icons.html" as ic %}
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <a href="{{ url_for('main.home') }}" class="brand">
+        <span class="brand-mark">{{ ic.icon('brain', 20, '#fff') }}</span>
+        <span class="brand-name">Neuro<b>Academy</b></span>
+      </a>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-group">
+        <div class="nav-group-label">PRINCIPAL</div>
+        <a class="nav-item {{ 'active' if request.path == url_for('main.home') }}" href="{{ url_for('main.home') }}">{{ ic.icon('home', 17) }}<span>Home</span></a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">APRENDER</div>
+        <a class="nav-item {{ 'active' if request.path.startswith('/cursos') }}" href="{{ url_for('main.cursos') }}">{{ ic.icon('book', 17) }}<span>Cursos</span></a>
+        <a class="nav-item {{ 'active' if request.path.startswith('/roadmaps') }}" href="{{ url_for('main.roadmaps') }}">{{ ic.icon('map', 17) }}<span>Roadmaps</span></a>
+        <a class="nav-item {{ 'active' if request.path.startswith('/ferramentas') }}" href="{{ url_for('main.ferramentas') }}">{{ ic.icon('tool', 17) }}<span>Ferramentas IA</span></a>
+        <a class="nav-item {{ 'active' if request.path.startswith('/blog') }}" href="{{ url_for('main.blog') }}">{{ ic.icon('file', 17) }}<span>Blog</span></a>
+        <a class="nav-item {{ 'active' if request.path.startswith('/noticias') }}" href="{{ url_for('main.noticias') }}">{{ ic.icon('news', 17) }}<span>Notícias</span></a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">COMUNIDADE</div>
+        <a class="nav-item {{ 'active' if request.path.startswith('/comunidade') }}" href="{{ url_for('main.comunidade') }}">{{ ic.icon('users', 17) }}<span>Comunidade</span></a>
+        <a class="nav-item {{ 'active' if request.path.startswith('/marketplace') }}" href="{{ url_for('main.marketplace') }}">{{ ic.icon('bag', 17) }}<span>Marketplace</span></a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">MINHA CONTA</div>
+        <a class="nav-item {{ 'active' if request.path.startswith('/perfil') }}" href="{{ url_for('main.perfil') }}">{{ ic.icon('user', 17) }}<span>Perfil</span></a>
+        <a class="nav-item {{ 'active' if request.path.startswith('/configuracoes') }}" href="{{ url_for('main.configuracoes') }}">{{ ic.icon('settings', 17) }}<span>Configurações</span></a>
+        <a class="nav-item {{ 'active' if request.path.startswith('/premium') }}" href="{{ url_for('main.premium') }}">{{ ic.icon('crown', 17) }}<span>Área Premium</span></a>
+      </div>
+      {% if current_user.is_authenticated and current_user.role == 'admin' %}
+      <div class="nav-group">
+        <div class="nav-group-label">SISTEMA</div>
+        <a class="nav-item {{ 'active' if request.path.startswith('/admin') }}" href="{{ url_for('main.admin') }}">{{ ic.icon('shield', 17) }}<span>Administração</span></a>
+      </div>
+      {% endif %}
+    </nav>
+    <div class="sidebar-tutor">
+      <a href="{{ url_for('main.tutor') }}" class="{{ 'active-tutor' if request.path.startswith('/tutor') }}">
+        {{ ic.icon('bot', 17, 'currentColor') }}<span>IA Tutor</span>
+        <span style="margin-left:auto;display:flex;">{{ ic.icon('sparkles', 12) }}</span>
+      </a>
+    </div>
+    {% if current_user.is_authenticated %}
+    <div style="padding:10px 12px;border-top:1px solid rgba(77,126,255,.08);">
+      <a href="{{ url_for('main.logout') }}" style="display:flex;align-items:center;gap:8px;color:var(--muted);text-decoration:none;font-size:13px;padding:6px 4px;">{{ ic.icon('log-out',14) }} Sair</a>
+    </div>
+    {% endif %}
+  </aside>
+
+  <div class="app-main">
+    <header class="topbar">
+      <form class="topbar-search" action="{{ url_for('main.cursos') }}" method="get">
+        {{ ic.icon('search', 15, '#6B7A99') }}
+        <input type="text" name="busca" placeholder="Buscar cursos, artigos, ferramentas...">
+      </form>
+      <div class="flex items-center gap-12" style="margin-left:auto;">
+        <button class="icon-btn" style="position:relative;">
+          {{ ic.icon('bell', 16) }}
+          <span style="position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:var(--primary);border:2px solid var(--card);"></span>
+        </button>
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('main.perfil') }}" class="topbar-user">
+          <span class="topbar-avatar">{{ current_user.initial }}</span>
+          <div class="hidden-mobile">
+            <div style="font-family:var(--font-head);font-size:13px;font-weight:600;">{{ current_user.name }}</div>
+            <div class="mono" style="font-size:11px;color:var(--primary);">{{ current_user.plan }}</div>
+          </div>
+        </a>
+        {% else %}
+        <a href="{{ url_for('main.login') }}" class="btn btn-primary btn-sm">Entrar</a>
+        {% endif %}
+      </div>
+    </header>
+    <main>
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+{# Host global do sistema de conquistas (Playstation/Xbox/Steam-inspirado):
+   qualquer página pode disparar uma conquista via window.NeuroAchievements.show(...);
+   o popup é sempre inserido aqui, canto inferior direito, nunca dentro do
+   fluxo da página (ver static/js/app.js). #}
+<div class="achv-host" id="achvHost" aria-live="polite" aria-atomic="true"></div>
+<div class="confetti-host" id="confettiHost" aria-hidden="true"></div>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,47 @@
+{% extends "base_app.html" %}
+{% block title %}Ferramentas de IA — NeuroAcademy{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="eyebrow">{{ ic.icon('tool',12) }} FERRAMENTAS</div>
+  <h1 class="section-title" style="margin-bottom:8px;">Diretório de ferramentas de IA</h1>
+  <p class="text-muted mb-24">Compare e descubra as melhores ferramentas de IA para cada necessidade.</p>
+
+  <form method="get" class="card" style="padding:16px 18px;margin-bottom:20px;">
+    <div class="input-wrap" style="background:rgba(255,255,255,.04);border-color:rgba(77,126,255,.12);">
+      {{ ic.icon('search',13,'#6B7A99') }}
+      <input type="text" name="busca" value="{{ q }}" placeholder="Buscar ferramentas...">
+    </div>
+  </form>
+
+  <div class="flex gap-8" style="flex-wrap:wrap;margin-bottom:32px;">
+    {% for c in categories %}
+    <a href="{{ url_for('main.ferramentas', categoria=c, busca=q) }}" class="pill {{ 'active' if c==active_category }}">{{ c }}</a>
+    {% endfor %}
+  </div>
+
+  <div class="grid-cards-3">
+    {% for t in tools %}
+    <div class="card card-pad">
+      <div class="flex items-center gap-12 mb-16">
+        <div style="width:44px;height:44px;border-radius:12px;background:{{ t.color }}22;color:{{ t.color }};display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-weight:800;">{{ t.name[0] }}</div>
+        <div>
+          <div style="font-weight:700;">{{ t.name }}</div>
+          <div class="mono text-muted" style="font-size:11px;">{{ t.category }}</div>
+        </div>
+        {% if t.free %}<span class="badge" style="background:rgba(34,197,94,.12);color:#22c55e;margin-left:auto;">GRÁTIS</span>{% endif %}
+      </div>
+      <p class="text-muted" style="font-size:13px;line-height:1.6;margin-bottom:14px;">{{ t.desc }}</p>
+      <div class="flex items-center gap-16 mb-12">
+        <div class="flex items-center gap-8">{{ ic.icon('star',13,'#FFD166') }}<span class="mono" style="font-size:12px;">{{ t.rating }}</span></div>
+        <div class="flex items-center gap-8">{{ ic.icon('users',13,'#6B7A99') }}<span class="mono text-muted" style="font-size:12px;">{{ t.users_label }}</span></div>
+      </div>
+      <div class="flex gap-8" style="flex-wrap:wrap;">
+        {% for tag in t.tag_list %}<span class="badge" style="background:var(--secondary);color:var(--muted);">{{ tag }}</span>{% endfor %}
+      </div>
+    </div>
+    {% else %}
+    <p class="text-muted">Nenhuma ferramenta encontrada.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

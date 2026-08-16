@@ -1,0 +1,44 @@
+{% extends "base_app.html" %}
+{% block title %}Blog — NeuroAcademy{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="eyebrow">{{ ic.icon('file',12) }} BLOG</div>
+  <h1 class="section-title" style="margin-bottom:8px;">Artigos e guias sobre IA</h1>
+  <p class="text-muted mb-24">Conteúdo produzido para te ajudar a entender e aplicar inteligência artificial.</p>
+
+  <div class="flex gap-8" style="flex-wrap:wrap;margin-bottom:32px;">
+    {% for t in tags %}
+    <a href="{{ url_for('main.blog', tag=t) }}" class="pill {{ 'active' if t==active_tag }}">{{ t }}</a>
+    {% endfor %}
+  </div>
+
+  {% if featured and active_tag == 'Todos' %}
+  <a href="{{ url_for('main.blog_post', post_id=featured.id) }}" class="card featured-post" style="display:grid;grid-template-columns:1fr 1fr;overflow:hidden;text-decoration:none;margin-bottom:32px;">
+    <div class="course-thumb" style="height:100%;min-height:260px;"><img src="{{ featured.img_url }}" alt="{{ featured.title }}"></div>
+    <div style="padding:32px;display:flex;flex-direction:column;justify-content:center;">
+      <span class="badge" style="background:rgba(77,126,255,.15);color:var(--primary);width:fit-content;margin-bottom:12px;">DESTAQUE · {{ featured.tag }}</span>
+      <h2 style="font-size:24px;margin-bottom:12px;line-height:1.3;">{{ featured.title }}</h2>
+      <p class="text-muted" style="line-height:1.6;margin-bottom:16px;">{{ featured.excerpt }}</p>
+      <div class="mono text-muted" style="font-size:12px;">{{ featured.read_time }} · {{ featured.date_label }}</div>
+    </div>
+  </a>
+  {% endif %}
+
+  <div class="grid-cards">
+    {% for p in posts %}
+    {% if not (featured and p.id == featured.id and active_tag == 'Todos') %}
+    <a href="{{ url_for('main.blog_post', post_id=p.id) }}" class="card course-card">
+      <div class="course-thumb"><img src="{{ p.img_url }}" alt="{{ p.title }}"></div>
+      <div class="course-body">
+        <span class="course-tag" style="color:var(--primary);">{{ p.tag }}</span>
+        <h3 class="course-title">{{ p.title }}</h3>
+        <p class="course-desc">{{ p.excerpt }}</p>
+        <div class="course-meta"><span>{{ p.read_time }}</span><span>{{ p.date_label }}</span></div>
+      </div>
+    </a>
+    {% endif %}
+    {% endfor %}
+  </div>
+</div>
+<style>@media (max-width:768px){.featured-post{grid-template-columns:1fr!important;}}</style>
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends "base_app.html" %}
+{% block title %}Roadmaps — NeuroAcademy{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="eyebrow">{{ ic.icon('map',12) }} ROADMAPS</div>
+  <h1 class="section-title" style="margin-bottom:8px;">Trilhas de aprendizado</h1>
+  <p class="text-muted mb-24">Siga um roteiro estruturado, passo a passo, para dominar IA de acordo com seu objetivo.</p>
+
+  <div class="grid-cards">
+    {% for r in roadmaps %}
+    {% set current_step = progress_map.get(r.id, 1) %}
+    <div class="card card-pad">
+      <div style="width:44px;height:44px;border-radius:12px;background:{{ r.color }}22;color:{{ r.color }};display:flex;align-items:center;justify-content:center;margin-bottom:16px;">{{ ic.icon('map',20,r.color) }}</div>
+      <h3 style="font-size:18px;margin-bottom:8px;">{{ r.title }}</h3>
+      <p class="text-muted" style="font-size:13px;line-height:1.6;margin-bottom:16px;">{{ r.description }}</p>
+
+      <div class="flex gap-16 mb-16">
+        <div class="flex items-center gap-8 mono text-muted" style="font-size:12px;">{{ ic.icon('clock',13) }}{{ r.duration_label }}</div>
+        <div class="flex items-center gap-8 mono text-muted" style="font-size:12px;">{{ ic.icon('book',13) }}{{ r.courses_count }} cursos</div>
+        <div class="flex items-center gap-8 mono text-muted" style="font-size:12px;">{{ ic.icon('zap',13) }}{{ current_step - 1 }}/{{ r.steps|length }} etapas</div>
+      </div>
+
+      <div class="flex-col gap-8 mb-16">
+        {% for step in r.steps %}
+        {% set idx = loop.index %}
+        <div class="flex items-center gap-10" style="opacity:{{ '1' if idx <= current_step else '0.45' }};">
+          {% if idx < current_step %}
+            {{ ic.icon('check',14,'#22c55e') }}
+          {% elif idx == current_step %}
+            {{ ic.icon('zap',14,r.color) }}
+          {% else %}
+            {{ ic.icon('lock',14,'#6B7A99') }}
+          {% endif %}
+          <span style="font-size:13px;flex:1;">{{ step.label }}</span>
+          <span class="mono text-muted" style="font-size:11px;">{{ step.duration }}</span>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if current_user.is_authenticated %}
+      <button class="btn btn-outline btn-block roadmap-advance" data-roadmap="{{ r.id }}" {{ 'disabled' if current_step >= r.steps|length }}>
+        {{ 'Trilha concluída' if current_step >= r.steps|length else 'Avançar etapa' }}
+      </button>
+      {% else %}
+      <a href="{{ url_for('main.login') }}" class="btn btn-outline btn-block">Entrar para começar</a>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+document.querySelectorAll('.roadmap-advance').forEach(btn => {
+  btn.addEventListener('click', function(){
+    fetch(`/roadmaps/${this.dataset.roadmap}/avancar`, {method:'POST', headers:{'X-CSRFToken': getCsrfToken()}})
+      .then(r => r.json()).then(() => location.reload());
+  });
+});
+</script>
+{% endblock %}

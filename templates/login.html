@@ -1,0 +1,182 @@
+{% extends "base_public.html" %}
+{% block title %}Entrar — NeuroAcademy{% endblock %}
+{% block body %}
+<div style="min-height:100vh;display:flex;background:#070B14;overflow:hidden;">
+
+  <div class="hidden-mobile-login" style="flex:0 0 55%;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;">
+    <div style="position:absolute;inset:0;z-index:0;background:
+      radial-gradient(ellipse 70% 60% at 25% 35%, rgba(77,126,255,.14) 0%, transparent 65%),
+      radial-gradient(ellipse 50% 50% at 75% 65%, rgba(124,92,255,.10) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 30% at 50% 10%, rgba(0,212,255,.07) 0%, transparent 55%);"></div>
+    <div style="position:absolute;inset:0;z-index:0;background-image:linear-gradient(rgba(77,126,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(77,126,255,.04) 1px,transparent 1px);background-size:48px 48px;"></div>
+
+    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:360px;z-index:1;">
+      <div style="background:rgba(13,18,32,.8);backdrop-filter:blur(20px);border:1px solid rgba(77,126,255,.2);border-radius:20px;padding:22px;box-shadow:0 32px 80px rgba(0,0,0,.6);">
+        {# MOCK DATA: this is decorative marketing chrome shown to logged-out
+           visitors (a stylized "preview" of the product), not a real user's
+           dashboard. The numbers below are illustrative and intentionally
+           static -- do not wire this to a real session. #}
+        <div class="flex items-center gap-12" style="margin-bottom:20px;">
+          <div style="width:28px;height:28px;background:linear-gradient(135deg,#4D7EFF,#9B59FF);border-radius:8px;display:flex;align-items:center;justify-content:center;">{{ ic.icon('brain',14,'#fff') }}</div>
+          <span style="font-family:var(--font-head);font-size:13px;font-weight:700;">NeuroAcademy</span>
+          <div style="margin-left:auto;display:flex;gap:5px;">{% for c in ['#FF5F57','#FEBC2E','#28C840'] %}<div style="width:10px;height:10px;border-radius:50%;background:{{c}};"></div>{% endfor %}</div>
+        </div>
+        {% for label,pct,color in [('Fundamentos de IA',87,'#4D7EFF'),('Prompt Engineering',54,'#9B59FF'),('IA para Carreira',22,'#00D4FF')] %}
+        <div style="margin-bottom:14px;">
+          <div class="flex justify-between" style="margin-bottom:5px;">
+            <span style="font-size:12px;color:var(--muted2);">{{ label }}</span><span class="mono" style="font-size:11px;color:{{color}};">{{ pct }}%</span>
+          </div>
+          <div class="progress-track" style="height:4px;"><div class="progress-fill" style="width:{{pct}}%;background:linear-gradient(90deg,{{color}},{{color}}88);"></div></div>
+        </div>
+        {% endfor %}
+        <div class="flex gap-8" style="margin-top:18px;">
+          {% for v,l in [('3','Cursos'),('12h','Estudo'),('2','Certs.')] %}
+          <div style="flex:1;background:rgba(77,126,255,.08);border:1px solid rgba(77,126,255,.12);border-radius:10px;padding:10px 8px;text-align:center;">
+            <div style="font-family:var(--font-head);font-size:16px;font-weight:800;">{{ v }}</div>
+            <div class="mono" style="font-size:10px;color:var(--muted);">{{ l }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div style="position:relative;z-index:2;padding:0 52px 56px;">
+      <div class="eyebrow">{{ ic.icon('sparkles',11) }} PLATAFORMA DE IA · BRASIL</div>
+      <h1 style="font-size:clamp(28px,3.5vw,44px);font-weight:800;line-height:1.12;letter-spacing:-.025em;margin-bottom:14px;">Domine a <span class="gradient-text">Inteligência<br>Artificial.</span></h1>
+      <p style="font-size:15px;color:var(--muted);line-height:1.65;max-width:380px;">Continue sua jornada de aprendizado e acesse seus cursos, projetos e certificados.</p>
+    </div>
+  </div>
+
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:40px 24px;position:relative;z-index:1;">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 60% 40%, rgba(77,126,255,.05) 0%, transparent 70%);pointer-events:none;"></div>
+    <div style="width:100%;max-width:420px;position:relative;">
+      <a href="{{ url_for('main.home') }}" class="brand" style="margin-bottom:36px;">
+        <span class="brand-mark" style="width:38px;height:38px;border-radius:11px;box-shadow:0 0 20px rgba(77,126,255,.35);">{{ ic.icon('brain',20,'#fff') }}</span>
+        <span class="brand-name">Neuro<b>Academy</b></span>
+      </a>
+
+      <div class="card" style="background:rgba(13,18,32,.7);backdrop-filter:blur(24px);padding:36px 36px 32px;box-shadow:0 24px 64px rgba(0,0,0,.5);">
+        <div id="loginPane">
+          <div style="margin-bottom:28px;">
+            <h2 style="font-size:26px;font-weight:800;letter-spacing:-.02em;margin-bottom:6px;">Bem-vindo de volta</h2>
+            <p style="font-size:14px;color:var(--muted);">Entre para continuar aprendendo.</p>
+          </div>
+
+          {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+
+          <form method="post" action="{{ url_for('main.login') }}" style="display:flex;flex-direction:column;gap:16px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div>
+              <label class="form-label">E-mail</label>
+              <div class="input-wrap">
+                {{ ic.icon('mail',15,'#6B7A99') }}
+                <input type="email" name="email" placeholder="voce@email.com" required>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between" style="margin-bottom:7px;">
+                <label class="form-label" style="margin-bottom:0;">Senha</label>
+                <a href="#" style="font-size:12px;color:var(--primary);text-decoration:none;">Esqueci a senha</a>
+              </div>
+              <div class="input-wrap">
+                {{ ic.icon('lock',15,'#6B7A99') }}
+                <input type="password" name="password" placeholder="••••••••" required>
+              </div>
+            </div>
+            <label class="checkbox-row">
+              <input type="checkbox" name="remember" style="width:18px;height:18px;accent-color:#4D7EFF;">
+              <span style="font-size:13px;color:var(--muted);">Lembrar de mim</span>
+            </label>
+            <button type="submit" class="btn btn-primary btn-block" style="padding:14px 0;margin-top:4px;">Entrar {{ ic.icon('arrow-right',16) }}</button>
+          </form>
+
+          <p style="font-size:12px;color:var(--muted);text-align:center;margin-top:16px;">
+            Conta de demonstração: <span class="mono">gabriela@neuroacademy.dev</span> / <span class="mono">neuro123</span>
+          </p>
+
+          <div class="flex items-center gap-12" style="margin:24px 0;">
+            <div style="flex:1;height:1px;background:rgba(255,255,255,.07);"></div>
+            <span style="font-size:12px;color:var(--muted);white-space:nowrap;">ou</span>
+            <div style="flex:1;height:1px;background:rgba(255,255,255,.07);"></div>
+          </div>
+
+          <button type="button" class="btn btn-outline btn-block" onclick="document.getElementById('loginPane').style.display='none';document.getElementById('registerPane').style.display='block';">Criar conta grátis</button>
+        </div>
+
+        <div id="registerPane" style="display:none;">
+          <div style="margin-bottom:28px;">
+            <h2 style="font-size:26px;font-weight:800;letter-spacing:-.02em;margin-bottom:6px;">Criar conta grátis</h2>
+            <p style="font-size:14px;color:var(--muted);">Comece sua jornada em IA agora mesmo.</p>
+          </div>
+          <form method="post" action="{{ url_for('main.register') }}" style="display:flex;flex-direction:column;gap:16px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div>
+              <label class="form-label">Nome completo</label>
+              <div class="input-wrap">{{ ic.icon('user',15,'#6B7A99') }}<input type="text" name="name" placeholder="Seu nome" required></div>
+            </div>
+            <div>
+              <label class="form-label">E-mail</label>
+              <div class="input-wrap">{{ ic.icon('mail',15,'#6B7A99') }}<input type="email" name="email" placeholder="voce@email.com" required></div>
+            </div>
+            <div>
+              <label class="form-label">Senha</label>
+              <div class="input-wrap">{{ ic.icon('lock',15,'#6B7A99') }}<input type="password" name="password" id="registerPassword" placeholder="Crie uma senha" required></div>
+              <ul id="passwordChecklist" style="list-style:none;padding:0;margin:10px 0 0;display:flex;flex-direction:column;gap:4px;">
+                <li data-rule="length" class="pw-rule"><span class="pw-rule-icon">○</span> Pelo menos 8 caracteres</li>
+                <li data-rule="uppercase" class="pw-rule"><span class="pw-rule-icon">○</span> Uma letra maiúscula</li>
+                <li data-rule="lowercase" class="pw-rule"><span class="pw-rule-icon">○</span> Uma letra minúscula</li>
+                <li data-rule="number" class="pw-rule"><span class="pw-rule-icon">○</span> Um número</li>
+                <li data-rule="special" class="pw-rule"><span class="pw-rule-icon">○</span> Um caractere especial (ex: ! @ # $)</li>
+              </ul>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block" id="registerSubmit" style="padding:14px 0;margin-top:4px;" disabled>Criar conta {{ ic.icon('arrow-right',16) }}</button>
+          </form>
+          <button type="button" class="btn btn-ghost btn-block" style="margin-top:16px;" onclick="document.getElementById('registerPane').style.display='none';document.getElementById('loginPane').style.display='block';">Voltar para o login</button>
+        </div>
+        <style>
+          .pw-rule{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:7px;transition:color .15s;}
+          .pw-rule.met{color:#22c55e;}
+          .pw-rule .pw-rule-icon{font-size:10px;}
+        </style>
+        <script>
+        (function(){
+          var input = document.getElementById('registerPassword');
+          var submit = document.getElementById('registerSubmit');
+          if (!input) return;
+          // Mirrors utils.password_requirements() in Python exactly -- the
+          // backend is still the source of truth and re-validates on submit;
+          // this is feedback only, never the actual security boundary.
+          var specialRe = /[!@#$%^&*(),.?":{}|<>_\-+=\[\];'`~/\\]/;
+          function evaluate(){
+            var v = input.value;
+            var rules = {
+              length: v.length >= 8,
+              uppercase: /[A-Z]/.test(v),
+              lowercase: /[a-z]/.test(v),
+              number: /[0-9]/.test(v),
+              special: specialRe.test(v)
+            };
+            var allMet = true;
+            Object.keys(rules).forEach(function(key){
+              var li = document.querySelector('.pw-rule[data-rule="' + key + '"]');
+              var icon = li.querySelector('.pw-rule-icon');
+              if (rules[key]) {
+                li.classList.add('met'); icon.textContent = '✓';
+              } else {
+                li.classList.remove('met'); icon.textContent = '○'; allMet = false;
+              }
+            });
+            submit.disabled = !allMet;
+          }
+          input.addEventListener('input', evaluate);
+          evaluate();
+        })();
+        </script>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+@media (max-width:860px){ .hidden-mobile-login{ display:none !important; } }
+</style>
+{% endblock %}

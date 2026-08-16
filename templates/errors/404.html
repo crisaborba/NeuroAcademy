@@ -1,0 +1,14 @@
+{% extends "base_public.html" %}
+{% block title %}Página não encontrada — NeuroAcademy{% endblock %}
+{% block body %}
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;">
+  <div>
+    <div class="eyebrow" style="justify-content:center;">ERRO 404</div>
+    <h1 style="font-size:clamp(32px,5vw,56px);margin-bottom:16px;">Isso não é bem o que você procurava.</h1>
+    <p style="color:var(--muted);font-size:16px;max-width:480px;margin:0 auto 32px;line-height:1.65;">
+      O conteúdo pode ter sido movido, removido, ou o link que você seguiu está incorreto.
+    </p>
+    <a href="{{ url_for('main.home') }}" class="btn btn-primary">Voltar para o início</a>
+  </div>
+</div>
+{% endblock %}

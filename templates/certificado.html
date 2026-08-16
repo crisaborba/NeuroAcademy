@@ -1,0 +1,94 @@
+{% extends "base_app.html" %}
+{% block title %}Certificado — {{ course.title }}{% endblock %}
+{% block content %}
+<div class="page-narrow">
+  <div class="cert-frame" id="certificateArea">
+    <div class="cert-inner">
+      <div class="cert-brand">
+        <span class="brand-mark" style="width:40px;height:40px;">{{ ic.icon('brain', 22, '#fff') }}</span>
+        <span class="cert-brand-name">Neuro<b>Academy</b></span>
+      </div>
+
+      <div class="cert-eyebrow">CERTIFICADO DE CONCLUSÃO</div>
+
+      <p class="cert-line">A NeuroAcademy certifica que</p>
+      <h1 class="cert-name">{{ current_user.name }}</h1>
+      <p class="cert-line">concluiu com êxito o curso</p>
+      <h2 class="cert-course">{{ course.title }}</h2>
+
+      <p class="cert-desc">
+        demonstrando domínio prático dos conceitos e ferramentas de Inteligência Artificial abordados,
+        com carga horária de {{ course.hours_label }} e nível {{ course.level }}.
+      </p>
+
+      <div class="cert-meta-row">
+        <div class="cert-meta">
+          <div class="cert-meta-label">Data de conclusão</div>
+          <div class="cert-meta-value">{{ cert.issued_at.strftime('%d/%m/%Y') }}</div>
+        </div>
+        <div class="cert-meta">
+          <div class="cert-meta-label">Código de verificação</div>
+          <div class="cert-meta-value mono">{{ cert.code }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex certificate-actions" style="justify-content:center;gap:12px;margin-top:28px;">
+    <button class="btn btn-primary" onclick="window.print()">{{ ic.icon('award',15) }} Baixar / Imprimir</button>
+    <a href="{{ url_for('main.perfil') }}" class="btn btn-outline">Ver todos meus certificados</a>
+  </div>
+  <p class="text-muted certificate-actions" style="text-align:center;font-size:12px;margin-top:12px;">
+    Dica: ao imprimir, escolha "Salvar como PDF" no destino da impressão para baixar o arquivo.
+  </p>
+</div>
+
+<style>
+.cert-frame{
+  background:linear-gradient(160deg,#0d1a3a 0%,#0D1220 100%);
+  border:1px solid rgba(77,126,255,.3);
+  border-radius:20px;
+  padding:6px;
+}
+.cert-inner{
+  border:1.5px solid rgba(77,126,255,.35);
+  border-radius:16px;
+  padding:56px 48px;
+  text-align:center;
+}
+.cert-brand{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:28px;}
+.cert-brand-name{font-family:var(--font-head);font-weight:800;font-size:17px;color:var(--fg);}
+.cert-brand-name b{color:var(--primary);}
+.cert-eyebrow{font-family:var(--font-mono);font-size:12px;letter-spacing:.15em;color:var(--primary);margin-bottom:28px;}
+.cert-line{color:var(--muted);font-size:15px;margin:0 0 10px;}
+.cert-name{font-family:var(--font-head);font-size:34px;font-weight:800;margin:0 0 22px;background:linear-gradient(135deg,#4D7EFF 0%,#9B59FF 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.cert-course{font-family:var(--font-head);font-size:22px;font-weight:700;color:var(--fg);margin:0 0 22px;}
+.cert-desc{color:var(--muted);font-size:14px;max-width:480px;margin:0 auto 32px;line-height:1.7;}
+.cert-meta-row{display:flex;justify-content:center;gap:56px;flex-wrap:wrap;padding-top:24px;border-top:1px solid rgba(77,126,255,.15);}
+.cert-meta-label{font-size:11px;color:var(--muted);margin-bottom:4px;}
+.cert-meta-value{font-weight:700;color:var(--fg);}
+
+@media print {
+  /* The certificate must print/download as a clean standalone document,
+     not as a screenshot of the app shell (sidebar, topbar, nav, buttons). */
+  .sidebar, .topbar, .certificate-actions { display: none !important; }
+  .app-main, body, html { background: #fff !important; margin: 0 !important; }
+  .page-narrow { padding: 0 !important; max-width: none !important; }
+  .cert-frame { background: #fff !important; border: none !important; border-radius: 0; padding: 0; }
+  .cert-inner {
+    border: 3px double #4D7EFF !important;
+    border-radius: 0;
+    padding: 64px 48px;
+    min-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .cert-brand-name, .cert-course, .cert-meta-value { color: #111 !important; -webkit-text-fill-color: #111 !important; }
+  .cert-name { -webkit-text-fill-color: #4D7EFF !important; color: #4D7EFF !important; }
+  .cert-line, .cert-desc, .cert-meta-label { color: #555 !important; }
+  .cert-eyebrow { color: #4D7EFF !important; }
+  .cert-meta-row { border-top-color: #ddd !important; }
+}
+</style>
+{% endblock %}

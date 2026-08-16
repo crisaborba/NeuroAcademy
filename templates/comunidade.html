@@ -1,0 +1,99 @@
+{% extends "base_app.html" %}
+{% block title %}Comunidade — NeuroAcademy{% endblock %}
+{% block content %}
+<div class="page" style="max-width:1200px;">
+  <div class="eyebrow">{{ ic.icon('users',12) }} COMUNIDADE</div>
+  <h1 class="section-title" style="margin-bottom:8px;">Comunidade NeuroAcademy</h1>
+  <p class="text-muted mb-24">Tire dúvidas, compartilhe projetos e aprenda junto com outros estudantes.</p>
+
+  <div style="display:grid;grid-template-columns:1fr 300px;gap:32px;" class="community-grid">
+    <div>
+      {% if current_user.is_authenticated %}
+      <form method="post" action="{{ url_for('main.postar_comunidade') }}" class="card card-pad mb-24">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input name="title" class="plain" placeholder="Compartilhe algo com a comunidade..." style="margin-bottom:10px;background:transparent;border:none;font-size:14px;padding:8px 0;" required>
+        <textarea name="body" class="plain" rows="2" placeholder="Detalhes (opcional)" style="margin-bottom:10px;"></textarea>
+        <div class="flex justify-between items-center">
+          <select name="topic" class="plain" style="width:auto;">
+            {% for t in topics[1:] %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+          </select>
+          <button type="submit" class="btn btn-primary btn-sm">Publicar</button>
+        </div>
+      </form>
+      {% endif %}
+
+      <div class="flex gap-8" style="flex-wrap:wrap;margin-bottom:24px;">
+        {% for t in topics %}
+        <a href="{{ url_for('main.comunidade', topico=t) }}" class="pill {{ 'active' if t==active_topic }}">{{ t }}</a>
+        {% endfor %}
+      </div>
+
+      <div class="flex-col gap-16">
+        {% for p in posts %}
+        <div class="card card-pad">
+          {% if p.pinned %}<div class="badge" style="background:rgba(255,209,102,.15);color:#FFD166;margin-bottom:10px;">FIXADO</div>{% endif %}
+          {% if p.featured %}<div class="badge" style="background:rgba(155,89,255,.15);color:#9B59FF;margin-bottom:10px;">DESTAQUE</div>{% endif %}
+          <div class="flex items-center gap-12 mb-12">
+            <div class="topbar-avatar" style="width:34px;height:34px;font-size:13px;">{{ p.author_user.initial }}</div>
+            <div>
+              <div style="font-size:13px;font-weight:600;">{{ p.author_user.name }}</div>
+              <div class="mono text-muted" style="font-size:11px;">{{ p.topic }}</div>
+            </div>
+          </div>
+          <h3 style="font-size:16px;margin-bottom:8px;">{{ p.title }}</h3>
+          <p style="font-size:14px;color:var(--muted2);line-height:1.6;margin-bottom:14px;">{{ p.body }}</p>
+          <div class="flex gap-8" style="flex-wrap:wrap;margin-bottom:14px;">
+            {% for tag in p.tag_list %}<span class="badge" style="background:var(--secondary);color:var(--muted);">#{{ tag }}</span>{% endfor %}
+          </div>
+          <div class="flex items-center gap-16">
+            <button class="icon-btn like-btn" style="width:auto;padding:6px 12px;gap:6px;display:flex;" data-post="{{ p.id }}">{{ ic.icon('star',14,'#FFD166') }}<span class="like-count">{{ p.likes }}</span></button>
+            <span class="flex items-center gap-8 text-muted" style="font-size:13px;">{{ ic.icon('message',14) }}{{ p.comment_count }} respostas</span>
+          </div>
+        </div>
+        {% else %}
+        <p class="text-muted">Nenhuma publicação nesse tópico ainda.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="flex-col gap-16">
+      <div class="card card-pad">
+        <h4 style="font-size:14px;margin-bottom:16px;">{{ ic.icon('trophy',14,'#FFD166') }} Membros em destaque</h4>
+        <div class="flex-col gap-12">
+          {% for m in top_members %}
+          <div class="flex items-center gap-12">
+            <div class="topbar-avatar" style="width:30px;height:30px;font-size:12px;">{{ m.initial }}</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:600;">{{ m.name }}</div>
+              <div class="mono text-muted" style="font-size:11px;">{{ m.points }} pontos</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% if current_user.is_authenticated %}
+      <div class="card card-pad">
+        <h4 style="font-size:14px;margin-bottom:12px;">Minha atividade</h4>
+        <div class="flex-col gap-8">
+          <div class="flex justify-between" style="font-size:13px;"><span class="text-muted">Pontos</span><span>{{ current_user.points }}</span></div>
+          <div class="flex justify-between" style="font-size:13px;"><span class="text-muted">Streak</span><span>🔥 {{ current_user.streak }} dias</span></div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+<style>@media (max-width:900px){.community-grid{grid-template-columns:1fr!important;}}</style>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+document.querySelectorAll('.like-btn').forEach(btn => {
+  btn.addEventListener('click', function(){
+    fetch(`/comunidade/${this.dataset.post}/curtir`, {method:'POST', headers:{'X-CSRFToken': getCsrfToken()}})
+      .then(r => r.json()).then(data => {
+        if (data.ok) this.querySelector('.like-count').textContent = data.likes;
+      });
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends "base_app.html" %}
+{% block title %}Notícias — NeuroAcademy{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="eyebrow">{{ ic.icon('news',12) }} NOTÍCIAS</div>
+  <h1 class="section-title" style="margin-bottom:8px;">O que está acontecendo em IA</h1>
+  <p class="text-muted mb-24">Acompanhe as últimas notícias do mundo da inteligência artificial.</p>
+
+  <div class="flex gap-8" style="flex-wrap:wrap;margin-bottom:32px;">
+    {% for c in categories %}
+    <a href="{{ url_for('main.noticias', categoria=c) }}" class="pill {{ 'active' if c==active_category }}">{{ c }}</a>
+    {% endfor %}
+  </div>
+
+  <div class="grid-2col" style="align-items:start;gap:32px;grid-template-columns:2fr 1fr;">
+    <div class="grid-cards">
+      {% for n in news %}
+      <div class="card course-card">
+        <div class="course-thumb"><img src="{{ n.img_url }}" alt="{{ n.title }}"></div>
+        <div class="course-body">
+          <div class="flex items-center gap-8 mb-8">
+            <span class="course-tag" style="margin:0;color:var(--accent);">{{ n.category }}</span>
+            {% if n.trending %}<span class="badge" style="background:rgba(255,107,107,.15);color:#FF6B6B;">EM ALTA</span>{% endif %}
+          </div>
+          <h3 class="course-title">{{ n.title }}</h3>
+          <p class="course-desc">{{ n.excerpt }}</p>
+          <div class="course-meta"><span>{{ n.source }}</span><span>{{ n.time_label }}</span></div>
+        </div>
+      </div>
+      {% else %}
+      <p class="text-muted">Nenhuma notícia nessa categoria.</p>
+      {% endfor %}
+    </div>
+
+    <div class="flex-col gap-16">
+      <div class="card card-pad">
+        <h4 style="font-size:14px;margin-bottom:16px;">{{ ic.icon('trending',14,'#FF6B6B') }} Em alta</h4>
+        <div class="flex-col gap-12">
+          {% for t in trending %}
+          <div style="padding:10px 0;border-top:1px solid var(--border-soft);font-size:13px;color:var(--muted2);line-height:1.5;">{{ t.title }}</div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="card card-pad">
+        <h4 style="font-size:14px;margin-bottom:12px;">Receba novidades por e-mail</h4>
+        <p class="text-muted" style="font-size:13px;margin-bottom:14px;">As principais notícias de IA direto na sua caixa de entrada.</p>
+        <form id="newsletterForm">
+          <input class="plain" type="email" placeholder="seu@email.com" style="margin-bottom:10px;" required name="email">
+          <button class="btn btn-primary btn-block btn-sm" type="submit">Inscrever-se</button>
+        </form>
+        <p id="newsletterMsg" class="text-muted" style="font-size:12px;margin-top:8px;display:none;"></p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+document.getElementById('newsletterForm').addEventListener('submit', function(e){
+  e.preventDefault();
+  var self = this;
+  fetch('{{ url_for("main.newsletter") }}', {method:'POST', headers:{'X-CSRFToken': getCsrfToken()}})
+    .then(r => r.json()).then(data => {
+      var el = document.getElementById('newsletterMsg');
+      el.textContent = data.message; el.style.display = 'block'; el.style.color = '#7ee2a8';
+      self.reset();
+    });
+});
+</script>
+{% endblock %}

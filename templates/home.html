@@ -1,0 +1,193 @@
+{% extends "base_public.html" %}
+{% import "partials/nav.html" as nav with context %}
+{% block body %}
+{{ nav.pubnav() }}
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="container hero-inner">
+    <div style="max-width:780px;">
+      <div class="eyebrow fade-up">{{ ic.icon('sparkles',12) }} PLATAFORMA DE IA EDUCACIONAL · BRASIL</div>
+      <h1 class="fade-up" style="animation-delay:.05s;">Aprenda <span class="gradient-text">Inteligência<br>Artificial</span> do zero.</h1>
+      <p class="lead fade-up" style="animation-delay:.1s;">A plataforma que vai te preparar para um mercado transformado pela IA — com cursos práticos, comunidade ativa e um assistente inteligente que aprende com você.</p>
+      <div class="hero-actions fade-up" style="animation-delay:.15s;">
+        <a href="{{ url_for('main.cursos') }}" class="btn btn-primary">Começar de graça {{ ic.icon('arrow-right',16) }}</a>
+        <a href="{{ url_for('main.tutor') }}" class="btn btn-outline">{{ ic.icon('play',15) }} Ver demonstração</a>
+      </div>
+      <div class="hero-social fade-up" style="animation-delay:.2s;">
+        <div class="flex items-center gap-8">
+          {{ ic.icon('check',16,'#4D7EFF') }}
+          <p style="font-size:13px;color:var(--muted);margin:0;">Sem cartão de crédito · Acesso imediato aos primeiros módulos</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="floating-cards fade-up" style="animation-delay:.2s;">
+      {% for item in [('Fundamentos de IA', 87, '#4D7EFF'), ('Prompt Engineering', 62, '#9B59FF'), ('IA no Mercado de Trabalho', 41, '#00D4FF')] %}
+      <a href="{{ url_for('main.cursos') }}" class="float-card">
+        <div class="flex items-center gap-12" style="margin-bottom:10px;">
+          <div style="width:30px;height:30px;border-radius:8px;background:{{ item[2] }}22;color:{{ item[2] }};display:flex;align-items:center;justify-content:center;">{{ ic.icon('zap',16,item[2]) }}</div>
+          <span style="font-family:var(--font-head);font-size:13px;font-weight:600;">{{ item[0] }}</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" style="width:{{ item[1] }}%;background:linear-gradient(90deg,{{ item[2] }},{{ item[2] }}88);"></div>
+        </div>
+        <div class="flex justify-between" style="margin-top:6px;">
+          <span class="mono" style="font-size:11px;color:var(--muted);">progresso</span>
+          <span class="mono" style="font-size:11px;color:{{ item[2] }};">{{ item[1] }}%</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  <div style="position:absolute;bottom:32px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;opacity:.5;">
+    <span class="mono" style="font-size:11px;color:var(--muted);letter-spacing:.1em;">SCROLL</span>
+    {{ ic.icon('chevron-down',16,'#6B7A99') }}
+  </div>
+</section>
+
+<section class="stats-bar">
+  <div class="container stats-grid" style="grid-template-columns:repeat(3,1fr);">
+    {% for s in [(stats.course_count, 'Cursos disponíveis','book'), (stats.lesson_count, 'Aulas disponíveis','zap'), ('Sim','Tem opções 100% gratuitas','rocket')] %}
+    <div class="stat-item">
+      <div style="color:var(--primary);margin-bottom:8px;">{{ ic.icon(s[2],18) }}</div>
+      <div class="stat-value">{{ s[0] }}</div>
+      <div class="stat-label">{{ s[1] }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section style="padding:100px 0;">
+  <div class="container">
+    <div class="fade-up" style="margin-bottom:64px;">
+      <div class="eyebrow">{{ ic.icon('book',12) }} CURSOS</div>
+      <h2 class="section-title">Aprenda no seu ritmo,<br>com propósito real.</h2>
+      <p class="section-sub">Cada curso foi criado para que você saia sabendo aplicar IA de verdade — não só entender a teoria.</p>
+    </div>
+    <div class="grid-cards">
+      {% for c in courses %}
+      <a href="{{ url_for('main.curso_detalhe', course_id=c.id) }}" class="card course-card fade-up" style="animation-delay:{{ loop.index0 * 0.06 }}s;">
+        <div class="course-thumb"><img src="{{ c.img_url }}" alt="{{ c.title }}"></div>
+        <div class="course-body">
+          <span class="course-tag" style="color:{{ c.tag_color }};">{{ c.tag }}</span>
+          <h3 class="course-title">{{ c.title }}</h3>
+          <p class="course-desc">{{ c.description }}</p>
+          <div class="course-meta">
+            <span>{{ c.lessons_count }} aulas</span><span>{{ c.hours_label }}</span><span>{{ c.level }}</span>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    <div class="fade-up" style="text-align:center;margin-top:48px;">
+      <a href="{{ url_for('main.cursos') }}" class="btn btn-ghost">Ver todos os cursos {{ ic.icon('arrow-right',15) }}</a>
+    </div>
+  </div>
+</section>
+
+<section style="padding:100px 0;background:linear-gradient(180deg, rgba(77,126,255,.03) 0%, transparent 100%);">
+  <div class="container">
+    <div class="fade-up" style="margin-bottom:64px;">
+      <div class="eyebrow purple">{{ ic.icon('sparkles',12) }} RECURSOS</div>
+      <h2 class="section-title">Mais do que uma plataforma<br>de cursos.</h2>
+      <p class="section-sub">Um ecossistema completo pensado para a jornada inteira de quem quer aprender IA do zero.</p>
+    </div>
+    <div class="grid-cards-3">
+      {% for f in [('bot','#4D7EFF','Assistente IA Personalizado','Um tutor inteligente que responde dúvidas, cria planos de estudo e acompanha seu progresso em tempo real.'),
+                   ('target','#9B59FF','Roadmap Estruturado','Jornada de aprendizado pensada para iniciantes — do básico absoluto às competências do mercado de trabalho.'),
+                   ('layers','#00D4FF','Ecossistema Completo','Cursos, artigos, notícias, comparativos de ferramentas, projetos para portfólio e guias práticos em um só lugar.'),
+                   ('users','#FFD166','Comunidade Ativa','Estude com outros estudantes, participe de desafios, construa projetos coletivos e expanda seu networking.'),
+                   ('trophy','#FF6B6B','Certificações com Valor Real','Certificados reconhecíveis com provas práticas e sistema de especialização por área de competência em IA.'),
+                   ('trending','#4D7EFF','Progresso Gamificado','Conquistas, pontuação e desafios práticos que tornam o aprendizado motivador e consistente.')] %}
+      <div class="card feature-card fade-up">
+        <div class="feature-icon" style="background:{{ f[1] }}18;color:{{ f[1] }};">{{ ic.icon(f[0],22,f[1]) }}</div>
+        <h3>{{ f[2] }}</h3>
+        <p>{{ f[3] }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section style="padding:100px 0;">
+  <div class="container grid-2col">
+    <div class="fade-up">
+      <div class="eyebrow cyan">{{ ic.icon('bot',12) }} ASSISTENTE IA</div>
+      <h2 class="section-title" style="font-size:clamp(26px,3.5vw,44px);">Seu tutor disponível<br>24 horas por dia.</h2>
+      <p style="color:var(--muted);font-size:16px;line-height:1.7;margin-bottom:28px;">A NeuroIA aprende com seu ritmo de estudo e cria uma experiência completamente personalizada — respondendo dúvidas, sugerindo recursos e adaptando desafios ao seu nível.</p>
+      {% for item in ['Planos de estudo personalizados','Respostas contextualizadas para cada aluno','Correção automática de atividades práticas','Recomendação de ferramentas por objetivo'] %}
+      <div class="flex items-center gap-12" style="margin-bottom:12px;">
+        {{ ic.icon('check',16,'#4D7EFF') }}<span style="font-size:14px;color:var(--muted2);">{{ item }}</span>
+      </div>
+      {% endfor %}
+      <a href="{{ url_for('main.tutor') }}" style="display:inline-flex;align-items:center;gap:8px;margin-top:24px;font-family:var(--font-head);font-size:14px;font-weight:700;color:var(--primary);text-decoration:none;">Conversar com a NeuroIA {{ ic.icon('arrow-right',14) }}</a>
+    </div>
+    <div class="card chat-panel fade-up" style="animation-delay:.15s;">
+      <div class="chat-header">
+        <div class="chat-avatar">{{ ic.icon('brain',18,'#fff') }}</div>
+        <div>
+          <div style="font-family:var(--font-head);font-size:14px;font-weight:700;">NeuroIA</div>
+          <div class="flex items-center gap-8"><span style="width:7px;height:7px;border-radius:50%;background:#22c55e;"></span><span class="mono" style="font-size:11px;color:var(--muted);">online agora</span></div>
+        </div>
+      </div>
+      <div class="chat-body" id="homeChatBody">
+        <div class="chat-msg"><div class="chat-bubble">Olá! Sou a NeuroIA, sua tutora de Inteligência Artificial. Como posso ajudar você hoje?</div></div>
+        <div class="chat-msg user"><div class="chat-bubble">Por onde devo começar a aprender IA?</div></div>
+        <div class="chat-msg"><div class="chat-bubble">Ótima pergunta! Para iniciantes, recomendo começar pelo curso "IA do Zero" — ele cobre os fundamentos sem precisar de programação. Quer que eu monte um plano de estudo personalizado para você?</div></div>
+      </div>
+      <div class="chat-input-row">
+        <input type="text" id="homeChatInput" placeholder="Faça uma pergunta...">
+        <button class="chat-send" id="homeChatSend">{{ ic.icon('arrow-right',16,'#fff') }}</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section id="planos" class="pricing-section">
+  <div class="container" style="max-width:1100px;">
+    <div class="fade-up" style="margin-bottom:64px;text-align:center;">
+      <div class="eyebrow purple" style="justify-content:center;">{{ ic.icon('zap',12) }} PLANOS</div>
+      <h2 class="section-title">Escolha o plano certo<br>para sua jornada.</h2>
+      <p class="section-sub" style="margin:0 auto;">Comece gratuitamente. Escale quando estiver pronto.</p>
+    </div>
+    <div class="grid-cards">
+      {% for p in [('Gratuito','R$ 0','para sempre','#6B7A99',['Acesso aos primeiros módulos','Artigos e notícias gratuitas','Diretório de ferramentas de IA','Comunidade de estudantes'],'Começar agora',False),
+                   ('Pro','R$ 29','por mês','#4D7EFF',['Todos os cursos desbloqueados','Assistente IA personalizado','Certificados verificáveis','Projetos guiados para portfólio','Suporte prioritário','Acesso antecipado a novos cursos'],'Assinar o Pro',True),
+                   ('Anual','R$ 19','por mês · cobrado anualmente','#9B59FF',['Tudo do Pro','2 meses grátis (economia de R$ 58)','Mentoria em grupo mensal','Badge exclusivo de membro anual','Acesso a eventos e hackathons'],'Assinar Anual',False)] %}
+      <div class="card price-card fade-up {{ 'highlight' if p[6] }}">
+        {% if p[6] %}<div class="price-badge">MAIS POPULAR</div>{% endif %}
+        <div style="margin-bottom:28px;">
+          <div class="price-name" style="color:{{ p[3] }};">{{ p[0].upper() }}</div>
+          <div class="flex items-center" style="gap:6px;align-items:baseline;">
+            <span class="price-value">{{ p[1] }}</span><span class="price-period">{{ p[2] }}</span>
+          </div>
+        </div>
+        <div class="price-features">
+          {% for f in p[4] %}<div>{{ ic.icon('check',15,p[3]) }}<span>{{ f }}</span></div>{% endfor %}
+        </div>
+        <a href="{{ url_for('main.cursos') }}" class="btn {{ 'btn-primary' if p[6] else 'btn-outline' }} btn-block">{{ p[5] }}</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section style="padding:100px 0;">
+  <div class="container">
+    <div class="card cta-box fade-up">
+      <div style="position:relative;z-index:1;">
+        <div style="margin-bottom:20px;color:var(--primary);">{{ ic.icon('brain',48,'#4D7EFF') }}</div>
+        <h2 class="section-title" style="margin:0 auto 16px;">O futuro pertence a quem<br>aprender a usar IA.</h2>
+        <p style="color:var(--muted);font-size:18px;max-width:480px;margin:0 auto 40px;line-height:1.65;">Não deixe essa janela de oportunidade fechar. Comece hoje, de graça, e saia na frente.</p>
+        <a href="{{ url_for('main.cursos') }}" class="btn btn-primary" style="padding:16px 32px;">Criar minha conta gratuita {{ ic.icon('arrow-right',16) }}</a>
+        <p class="mono" style="font-size:12px;color:var(--muted);margin-top:20px;">Sem cartão de crédito · Acesso imediato</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+{{ nav.pubfooter() }}
+{% endblock %}

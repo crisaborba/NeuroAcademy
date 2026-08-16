@@ -1,0 +1,53 @@
+{% extends "base_app.html" %}
+{% block title %}Área Premium — NeuroAcademy{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="eyebrow purple">{{ ic.icon('crown',12) }} PREMIUM</div>
+  <h1 class="section-title" style="margin-bottom:8px;">Área Premium</h1>
+  <p class="text-muted mb-24">Recursos exclusivos para membros Pro e Anual.</p>
+
+  {% if current_user.is_authenticated %}
+  <div class="card card-pad" style="display:inline-flex;align-items:center;gap:12px;margin-bottom:32px;">
+    {{ ic.icon('crown',20,'#FFD166') }}
+    <div>
+      <div style="font-weight:700;">Plano {{ current_user.plan }}</div>
+      <div class="text-muted" style="font-size:12px;">Seu plano atual</div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="grid-cards-3 mb-32">
+    {% for title, desc, tag, color in [('Mentoria em Grupo Mensal','Sessões ao vivo com especialistas em IA para tirar dúvidas e discutir projetos.','AO VIVO','#FF6B6B'),
+                                        ('Projetos Guiados para Portfólio','Projetos práticos com feedback detalhado para você construir um portfólio sólido.','EXCLUSIVO','#4D7EFF'),
+                                        ('Acesso Antecipado a Novos Cursos','Seja o primeiro a ter acesso a todo novo conteúdo publicado na plataforma.','EARLY ACCESS','#FFD166'),
+                                        ('Comunidade Premium','Canal exclusivo para membros Pro com debates aprofundados e networking.','PRO ONLY','#9B59FF'),
+                                        ('Assistente IA Sem Limites','Use a NeuroIA sem restrições — planos de estudo ilimitados e análises avançadas.','ILIMITADO','#00D4FF'),
+                                        ('Certificações Avançadas','Certificados com exame prático e reconhecimento por empresas parceiras.','CERTIFICADO','#22c55e')] %}
+    <div class="card feature-card">
+      <span class="badge" style="background:{{ color }}22;color:{{ color }};margin-bottom:14px;display:inline-block;">{{ tag }}</span>
+      <h3>{{ title }}</h3>
+      <p>{{ desc }}</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="grid-cards">
+    {% for p in [('Pro','R$ 29','por mês','#4D7EFF',False),('Anual','R$ 19','por mês · cobrado anualmente','#9B59FF',True)] %}
+    <div class="card price-card {{ 'highlight' if p[4] }}">
+      <div class="price-name" style="color:{{p[3]}};">{{ p[0].upper() }}</div>
+      <div class="flex items-center" style="gap:6px;align-items:baseline;margin-bottom:20px;">
+        <span class="price-value">{{ p[1] }}</span><span class="price-period">{{ p[2] }}</span>
+      </div>
+      {% if current_user.is_authenticated %}
+      <form method="post" action="{{ url_for('main.assinar', plano=p[0]) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn {{ 'btn-primary' if p[4] else 'btn-outline' }} btn-block">{{ 'Assinar plano ' + p[0] }}</button>
+      </form>
+      {% else %}
+      <a href="{{ url_for('main.login') }}" class="btn btn-outline btn-block">Entrar para assinar</a>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

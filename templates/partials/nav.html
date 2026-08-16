@@ -1,0 +1,97 @@
+{% import "partials/icons.html" as ic %}
+
+{% macro pubnav() %}
+<header class="pubnav" id="pubnav">
+  <div class="container pubnav-inner">
+    <a href="{{ url_for('main.home') }}" class="brand">
+      <span class="brand-mark">{{ ic.icon('brain', 20, '#fff') }}</span>
+      <span class="brand-name">Neuro<b>Academy</b></span>
+    </a>
+    <nav class="pubnav-links">
+      <a href="{{ url_for('main.cursos') }}">Cursos</a>
+      <a href="{{ url_for('main.ferramentas') }}">Recursos</a>
+      <a href="{{ url_for('main.comunidade') }}">Comunidade</a>
+      <a href="{{ url_for('main.home') }}#planos">Planos</a>
+    </nav>
+    <div class="pubnav-actions">
+      {% if current_user.is_authenticated %}
+      <a href="{{ url_for('main.perfil') }}" style="font-size:14px;font-weight:500;color:var(--muted2);text-decoration:none;padding:8px 16px;">{{ current_user.name.split(' ')[0] }}</a>
+      <a href="{{ url_for('main.cursos') }}" class="btn btn-primary btn-sm">Ir para a plataforma</a>
+      {% else %}
+      <a href="{{ url_for('main.login') }}" style="font-size:14px;font-weight:500;color:var(--muted2);text-decoration:none;padding:8px 16px;">Entrar</a>
+      <a href="{{ url_for('main.cursos') }}" class="btn btn-primary btn-sm">Começar de graça</a>
+      {% endif %}
+    </div>
+    <button class="mobile-toggle" id="mobileToggle">{{ ic.icon('menu', 22) }}</button>
+  </div>
+  <div class="container" id="mobileMenu" style="display:none;border-top:1px solid rgba(77,126,255,.12);padding:16px 0 24px;flex-direction:column;gap:8px;">
+    <a href="{{ url_for('main.cursos') }}" style="padding:10px 4px;color:var(--muted2);text-decoration:none;">Cursos</a>
+    <a href="{{ url_for('main.ferramentas') }}" style="padding:10px 4px;color:var(--muted2);text-decoration:none;">Recursos</a>
+    <a href="{{ url_for('main.comunidade') }}" style="padding:10px 4px;color:var(--muted2);text-decoration:none;">Comunidade</a>
+    <a href="{{ url_for('main.cursos') }}" class="btn btn-primary" style="margin-top:8px;text-align:center;">Começar de graça</a>
+  </div>
+</header>
+<script>
+(function(){
+  var nav = document.getElementById('pubnav');
+  window.addEventListener('scroll', function(){
+    if (window.scrollY > 20) nav.classList.add('scrolled'); else nav.classList.remove('scrolled');
+  });
+  var toggle = document.getElementById('mobileToggle');
+  var menu = document.getElementById('mobileMenu');
+  if (toggle) toggle.addEventListener('click', function(){
+    menu.style.display = menu.style.display === 'none' ? 'flex' : 'none';
+  });
+})();
+</script>
+{% endmacro %}
+
+{% macro pubfooter() %}
+<footer class="pubfooter">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <a href="{{ url_for('main.home') }}" class="brand" style="margin-bottom:16px;">
+          <span class="brand-mark" style="width:32px;height:32px;border-radius:8px;">{{ ic.icon('brain', 16, '#fff') }}</span>
+          <span class="brand-name" style="font-size:16px;">Neuro<b>Academy</b></span>
+        </a>
+        <p style="font-size:14px;color:var(--muted);line-height:1.7;max-width:300px;margin-bottom:24px;">Democratizando o acesso ao conhecimento em Inteligência Artificial para estudantes em todo o Brasil.</p>
+        <div class="flex gap-12">
+          <button class="social-btn" aria-label="Instagram">{{ ic.icon('sparkles',16) }}</button>
+          <button class="social-btn" aria-label="Twitter">{{ ic.icon('message',16) }}</button>
+          <button class="social-btn" aria-label="YouTube">{{ ic.icon('play',16) }}</button>
+          <button class="social-btn" aria-label="GitHub">{{ ic.icon('star',16) }}</button>
+        </div>
+      </div>
+      <div>
+        <h4>Plataforma</h4>
+        <a href="{{ url_for('main.cursos') }}">Cursos</a>
+        <a href="{{ url_for('main.roadmaps') }}">Roadmaps</a>
+        <a href="{{ url_for('main.ferramentas') }}">Ferramentas de IA</a>
+        <a href="{{ url_for('main.blog') }}">Blog</a>
+        <a href="{{ url_for('main.noticias') }}">Notícias</a>
+      </div>
+      <div>
+        <h4>Empresa</h4>
+        <a href="{{ url_for('main.home') }}">Sobre nós</a>
+        <a href="{{ url_for('main.home') }}">Missão</a>
+        <a href="{{ url_for('main.marketplace') }}">Marketplace</a>
+        <a href="{{ url_for('main.premium') }}">Premium</a>
+        <a href="{{ url_for('main.home') }}">Imprensa</a>
+      </div>
+      <div>
+        <h4>Suporte</h4>
+        <a href="{{ url_for('main.home') }}">Central de ajuda</a>
+        <a href="{{ url_for('main.comunidade') }}">Comunidade</a>
+        <a href="{{ url_for('main.home') }}">Contato</a>
+        <a href="{{ url_for('main.home') }}">Termos de uso</a>
+        <a href="{{ url_for('main.home') }}">Privacidade</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p style="margin:0;">© 2026 NeuroAcademy. Todos os direitos reservados.</p>
+      <div class="flex items-center gap-8">{{ ic.icon('globe',13) }}<span>Português (BR)</span></div>
+    </div>
+  </div>
+</footer>
+{% endmacro %}

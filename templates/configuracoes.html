@@ -1,0 +1,91 @@
+{% extends "base_app.html" %}
+{% block title %}Configurações — NeuroAcademy{% endblock %}
+{% block content %}
+<div class="page-narrow">
+  <div class="eyebrow">{{ ic.icon('settings',12) }} CONFIGURAÇÕES</div>
+  <h1 class="section-title" style="margin-bottom:32px;">Configurações da conta</h1>
+
+  <div class="card card-pad mb-24">
+    <h3 style="margin-bottom:16px;">{{ ic.icon('user',15) }} Conta</h3>
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="conta">
+      <div class="form-group">
+        <label class="form-label">Nome completo</label>
+        <input class="plain" name="name" value="{{ current_user.name }}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">E-mail</label>
+        <input class="plain" value="{{ current_user.email }}" disabled>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Usuário</label>
+        <input class="plain" value="@{{ current_user.username }}" disabled>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Bio</label>
+        <textarea class="plain" name="bio" rows="3">{{ current_user.bio }}</textarea>
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm">Salvar alterações</button>
+    </form>
+  </div>
+
+  <div class="card card-pad mb-24">
+    <h3 style="margin-bottom:16px;">{{ ic.icon('bell',15) }} Notificações</h3>
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="notificacoes">
+      {% for key, label, desc in [('email_notifications','E-mails de progresso','Receba resumos semanais do seu aprendizado'),
+                                    ('community_notifications','Atividade da comunidade','Respostas, curtidas e menções'),
+                                    ('news_notifications','Novidades da plataforma','Novos cursos e recursos da NeuroAcademy'),
+                                    ('marketing_notifications','Conteúdo promocional','Ofertas, descontos e campanhas')] %}
+      <div class="flex justify-between items-center" style="padding:12px 0;border-top:1px solid var(--border-soft);">
+        <div>
+          <div style="font-size:14px;font-weight:500;">{{ label }}</div>
+          <div class="text-muted" style="font-size:12px;">{{ desc }}</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" name="{{ key }}" {{ 'checked' if current_user|attr(key) }}>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      {% endfor %}
+      <button type="submit" class="btn btn-primary btn-sm" style="margin-top:16px;">Salvar preferências</button>
+    </form>
+  </div>
+
+  <div class="card card-pad mb-24">
+    <h3 style="margin-bottom:16px;">{{ ic.icon('moon',15) }} Aparência</h3>
+    <p class="text-muted" style="font-size:13px;">A NeuroAcademy usa por padrão um tema escuro otimizado para longas sessões de estudo.</p>
+  </div>
+
+  <div class="card card-pad mb-24">
+    <h3 style="margin-bottom:16px;">{{ ic.icon('card',15) }} Assinatura</h3>
+    <div class="flex items-center gap-12 mb-16">
+      {{ ic.icon('crown',20,'#FFD166') }}
+      <div>
+        <div style="font-weight:600;">Plano {{ current_user.plan }}</div>
+        <div class="text-muted" style="font-size:12px;">Gerencie sua assinatura na página Premium</div>
+      </div>
+    </div>
+    <a href="{{ url_for('main.premium') }}" class="btn btn-outline btn-sm">Ver planos</a>
+  </div>
+
+  <div class="card card-pad">
+    <h3 style="margin-bottom:16px;">{{ ic.icon('shield',15) }} Segurança</h3>
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="senha">
+      <div class="form-group">
+        <label class="form-label">Senha atual</label>
+        <input class="plain" type="password" name="old_password" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nova senha</label>
+        <input class="plain" type="password" name="new_password" required>
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm">Atualizar senha</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
